@@ -1,0 +1,7 @@
+name: sar2-d2
+channels:
+  - conda-forge
+  - nodefaults  # force everything to come from conda-forge channel
+dependencies:
+  - python>3.9
+  - isce3==0.22.1
