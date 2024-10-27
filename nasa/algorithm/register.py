@@ -15,7 +15,7 @@ response = maap.register_algorithm_from_yaml_file("nasa/algorithm.yml")
 
 try:
     response.raise_for_status()
-    print(response.json())
+    print("Check registration progress at", response.json()["message"]["job_web_url"])
 except requests.HTTPError as e:
     print(f"ERROR: {e}", file=sys.stderr)
     exit(1)
