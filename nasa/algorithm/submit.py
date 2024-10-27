@@ -36,9 +36,9 @@ def to_url(path: str, username: str) -> str:
         die(f"File not found: {path}")
 
     if path.startswith("/projects/my-public-bucket/"):
-        relpath = f"{username}/{path.lstrip('/projects/my-public-bucket/')}"
+        relpath = f"{username}/{path.removeprefix('/projects/my-public-bucket/')}"
     elif path.startswith("/projects/shared-buckets/"):
-        relpath = path.lstrip("/projects/shared-buckets/")
+        relpath = path.removeprefix("/projects/shared-buckets/")
     else:
         die(f"Unable to convert to a URL: {path}")
 
@@ -48,7 +48,7 @@ def to_url(path: str, username: str) -> str:
     try:
         r.raise_for_status()
     except requests.HTTPError as e:
-        die(f"Unable to reach '{url}': {e}")
+        die(f"Failed to convert '{path}' to a URL: {e}")
 
     return url
 
