@@ -1,4 +1,4 @@
-#!/usr/bin/env conda run -n sar2-d2 python
+#!/usr/bin/env -S conda run -n sar2-d2 python
 
 """
 List registered NASA MAAP algorithms.
