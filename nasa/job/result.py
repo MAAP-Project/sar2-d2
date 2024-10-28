@@ -24,4 +24,4 @@ if __name__ == "__main__":
     job_id = args.job_id
     result = maap.getJobResult(job_id)
 
-    print("\n".join(result))
+    print("\n".join(result) if result else "No result found")

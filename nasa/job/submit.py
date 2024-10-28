@@ -61,8 +61,7 @@ def to_url(path: str, username: str) -> str:
     return url
 
 
-def parse_args(maap: MAAP, args: Sequence[str]) -> argparse.Namespace:
-    username = get_username(maap)
+def parse_args(username: str, args: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="SAR2-D2: Synthetic Aperture Radar Remote Disturbance Detector"
     )
@@ -101,7 +100,8 @@ if __name__ == "__main__":
     import subprocess
 
     maap = MAAP()
-    args = parse_args(maap, sys.argv[1:])
+    username = get_username(maap)
+    args = parse_args(username, sys.argv[1:])
     calibration_file = args.calibration_file
     bbox = f"{args.left} {args.bottom} {args.right} {args.top}"
 
@@ -117,6 +117,7 @@ if __name__ == "__main__":
     )
 
     result = maap.submitJob(
+        username=username,
         identifier="sar2-d2",
         algo_id=name,
         version=version,

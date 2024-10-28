@@ -54,3 +54,27 @@ locally (see above), with the following difference: if `CALIBRATION_FILE` is
 _not_ a URL, it will automatically be converted to a URL if its path starts with
 `/projects/my-public-bucket` or `/projects/shared-bucket/USERNAME` (where
 `USERNAME` is the username of any MAAP user, not necessarily your username).
+
+If the job was successfully submitted, the command above will print out the job
+ID of the newly submitted job, which you can use to check the job status.
+
+## Checking the status of a job
+
+After successfully submitting a job, you can use the job ID to check its status:
+
+```plain
+nasa/job/status.py JOB_ID
+```
+
+where `JOB_ID` is the job ID printed out by the job submission command.
+
+You can also get more information about the job, using the following command:
+
+```plain
+nasa/job/result.py JOB_ID
+```
+
+If the job has completed, successfully or not, the command will indicate where
+the results were written.  If the job failed, the command should also show an
+error message, that may or may not be helpful, and may require looking at the
+triaged job files for more information.
