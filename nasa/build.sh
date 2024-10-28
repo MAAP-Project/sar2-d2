@@ -8,4 +8,4 @@ basedir=$(dirname "$(dirname "$(readlink -f "$0")")")
 # us to pass arguments to an algorithm's "build" script, so this script is
 # required as a wrapper for DPS to call.
 
-"${basedir}"/bin/conda/install.sh --no-dev
+"${basedir}"/bin/conda/install.sh "${basedir}/environment.yml"

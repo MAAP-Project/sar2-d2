@@ -37,14 +37,19 @@ function update_environment() {
 }
 
 prefix=$(environment_prefix)
-env_files=("${basedir}"/environment.yml "${basedir}"/environment-dev.yml)
+
+if [[ $# -gt 0 ]]; then
+    env_files=("${@}")
+else
+    env_files=("${basedir}"/environment.yml "${basedir}"/environment-dev.yml)
+fi
 
 # Create list of env files that have been created/modified (i.e., are newer than [-nt])
 # the conda environment.
 if [[ ! -d "${prefix}" ]]; then
     # The conda env doesn't exist, so the environment must be updated with all of the
     # env files.  (The first update will force creation of the environment.)
-    updated_env_files=${env_files[*]}
+    updated_env_files=("${env_files[@]}")
 else
     # The conda env exists, so collect each env file that has been created or modified
     # since the env was created or last updated.
