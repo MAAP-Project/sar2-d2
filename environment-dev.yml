@@ -7,6 +7,8 @@ dependencies:
   - mypy
   - pytest
   - pip
+  - pyyaml
+  - types-pyyaml
   - types-requests
   - pip:
     - maap-py
