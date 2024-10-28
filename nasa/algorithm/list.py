@@ -1,4 +1,4 @@
-#!/usr/bin/env -S conda run -n sar2-d2 python
+#!/usr/bin/env -S bin/conda/run.sh python
 
 """
 List registered NASA MAAP algorithms.
@@ -17,6 +17,5 @@ if response["code"] != 200:
 algorithms = sorted(
     (algorithm["type"], algorithm["version"]) for algorithm in response["algorithms"]
 )
-longest_name = max(len(name) for name, _ in algorithms)
 
-print("\n".join(f"{name}: {version}" for name, version in algorithms))
+print("\n".join(f"{name}:{version}" for name, version in algorithms))

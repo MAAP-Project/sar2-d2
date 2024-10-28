@@ -1,4 +1,4 @@
-#!/usr/bin/env -S conda run -n sar2-d2 python
+#!/usr/bin/env -S bin/conda/run.sh python
 
 """
 Get the status of a job.

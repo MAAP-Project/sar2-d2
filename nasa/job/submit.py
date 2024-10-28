@@ -1,4 +1,4 @@
-#!/usr/bin/env -S conda run -n sar2-d2 python
+#!/usr/bin/env -S bin/conda/run.sh python
 
 """
 Submit a job using the NASA MAAP algorithm defined in the file nasa/algorithm.yml.
@@ -62,9 +62,7 @@ def to_url(path: str, username: str) -> str:
 
 
 def parse_args(username: str, args: Sequence[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="SAR2-D2: Synthetic Aperture Radar Remote Disturbance Detector"
-    )
+    parser = argparse.ArgumentParser(description="Submit a MAAP DPS job")
     parser.add_argument(
         "calibration_file",
         type=lambda arg: to_url(arg, username),
@@ -97,6 +95,7 @@ def parse_args(username: str, args: Sequence[str]) -> argparse.Namespace:
 
 if __name__ == "__main__":
     import json
+    import os
     import subprocess
 
     maap = MAAP()
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     calibration_file = args.calibration_file
     bbox = f"{args.left} {args.bottom} {args.right} {args.top}"
 
-    name = "sar2-d2"
+    name = os.environ["CONDA_DEFAULT_ENV"]
     version = (
         subprocess.run(["git", "tag", "--points-at", "HEAD"], capture_output=True)
         .stdout.decode()
@@ -118,7 +117,7 @@ if __name__ == "__main__":
 
     result = maap.submitJob(
         username=username,
-        identifier="sar2-d2",
+        identifier=name,
         algo_id=name,
         version=version,
         queue="maap-dps-worker-32vcpu-64gb",

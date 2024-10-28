@@ -1,42 +1,70 @@
 #!/usr/bin/env bash
 
+# Install dependencies from the environment*.yml files into the conda environment,
+# first creating the environment, if necessary.  If the environment is already up to
+# date with the environment*.yml files, nothing happens. Regardless, outputs the conda
+# environment absolute path of the environment directory (a.k.a., the environment
+# "prefix").
+
 set -Eeuo pipefail
 
+conda=${CONDA_EXE:-conda}
 thisdir=$(dirname "$(readlink -f "$0")")
 basedir=$(dirname "$(dirname "${thisdir}")")
+envname=$(basename "${basedir}")
 
-# We must make sure the lock file is up to date before installing the
-# dependencies listed within it.
-# "${thisdir}"/lock.sh
+function environment_prefix() {
+    # We must call "conda run" directly, rather than using our run.sh script,
+    # otherwise we end up in an infinite scripting loop.
 
-envname=$("${thisdir}"/name.sh)
-envdir=$("${thisdir}"/prefix.sh)
+    # The value of `result` will either be the environment "prefix" (directory) when the
+    # environment exists (captured from stdout), or an error message (captured from
+    # stderr) containing the directory as a suffix when the environment does not exist.
+    result=$("${conda}" run --no-capture-output --name "${envname}" printenv CONDA_PREFIX 2>&1 || true)
 
-#-------------------------------------------------------------------------------
-# conda lock is not behaving well with isce3/cuda, so commenting out for now.
-#
-# # If the conda lock file is newer than (-nt) the conda environment (i.e., the
-# # environment's "prefix" directory), install the dependencies from the lock file.
-# if [[ "${basedir}"/conda-lock.yml -nt "${envdir}" ]]; then
-#     # Since there is at least one package (maap-py) that is not available on
-#     # conda-forge, we need to use pip to install it (conda does this for us), so
-#     # we must set PIP_REQUIRE_VENV=0 to avoid complaints about installing packages
-#     # outside of a virtual environment, in case the user has set that env var to a
-#     # "truthy" value for direct pip usage.
-#     PIP_REQUIRE_VENV=0 "${thisdir}"/run.sh conda lock install --name "${envname}" "$@" "${basedir}"/conda-lock.yml
-# fi
-#-------------------------------------------------------------------------------
+    # In either case, the "prefix" directory starts with a foward-slash (`/`) and
+    # continues to the end of the captured output, so we tell grep to give us only
+    # the directory path, ignoring any prefix, if the result is an error message.
+    echo -n "${result}" | grep --only-matching "/.*$"
+}
 
-if [[ "${basedir}"/environment.yml -nt "${envdir}" || "${basedir}"/environment-dev.yml -nt "${envdir}" ]]; then
-    conda=${CONDA_EXE:-conda}
-    set -x
-    PIP_REQUIRE_VENV=0 "${conda}" env update --quiet --solver libmamba \
-        --name "${envname}" --file "${basedir}"/environment.yml
-
-    # Allow --no-dev flag (from nasa/build.sh) to *prevent* installation of
-    # development dependencies, since we don't need (nor want) them in the DPS.
-    if [[ "${1:-}" != "--no-dev" ]]; then
+function update_environment() {
+    (
+        set -x
         PIP_REQUIRE_VENV=0 "${conda}" env update --quiet --solver libmamba \
-            --name "${envname}" --file "${basedir}"/environment-dev.yml
-    fi
+            --name "${envname}" --file "${1}"
+    )
+}
+
+prefix=$(environment_prefix)
+env_files=("${basedir}"/environment.yml "${basedir}"/environment-dev.yml)
+
+# Create list of env files that have been created/modified (i.e., are newer than [-nt])
+# the conda environment.
+if [[ ! -d "${prefix}" ]]; then
+    # The conda env doesn't exist, so the environment must be updated with all of the
+    # env files.  (The first update will force creation of the environment.)
+    updated_env_files=${env_files[*]}
+else
+    # The conda env exists, so collect each env file that has been created or modified
+    # since the env was created or last updated.
+    for env_file in "${env_files[@]}"; do
+        if [[ "${env_file}" -nt "${prefix}" ]]; then
+            updated_env_files=("${updated_env_files[@]}" "${env_file}")
+        fi
+    done
 fi
+
+# Update the environment with each env file that is newer than the environment.
+for updated_env_file in "${updated_env_files[@]}"; do
+    update_environment "${updated_env_file}"
+done
+
+# Touch the conda env dir, just in case updating the environment did not produce
+# any changes (i.e., all dependencies are already satisified), otherwise, running
+# this script again, may still consider the environment to be out of date, and would
+# needlessly re-run the `conda env update` command for at least one of the
+# environment*.yml files.
+touch "${prefix}"
+
+echo "${prefix}"
