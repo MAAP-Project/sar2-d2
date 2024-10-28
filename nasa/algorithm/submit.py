@@ -1,7 +1,15 @@
 #!/usr/bin/env -S conda run -n sar2-d2 python
 
 """
-Register this NASA MAAP algorithm using the file nasa/algorithm.yml.
+Submit a job using the NASA MAAP algorithm defined in the file nasa/algorithm.yml.
+
+This ignores the value of `algorithm_version` within the YAML file, and uses one of the
+following values as the version of the algorithm to run:
+
+- `git tag --points-at HEAD`  # Git tag pointing to HEAD commit of current branch
+- `git branch --show-current` # Name of current git branch
+
+If there is no tag value, the branch name is used.
 """
 
 import argparse
@@ -53,13 +61,14 @@ def to_url(path: str, username: str) -> str:
     return url
 
 
-def parse_args(args: Sequence[str]) -> argparse.Namespace:
+def parse_args(maap: MAAP, args: Sequence[str]) -> argparse.Namespace:
+    username = get_username(maap)
     parser = argparse.ArgumentParser(
         description="SAR2-D2: Synthetic Aperture Radar Remote Disturbance Detector"
     )
     parser.add_argument(
         "calibration_file",
-        type=str,
+        type=lambda arg: to_url(arg, username),
         help="path to calibration file",
         metavar="calibration-file",
     )
@@ -87,18 +96,38 @@ def parse_args(args: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
-args = parse_args(sys.argv[1:])
-calibration_file = args.calibration_file
-bbox = f"{args.left} {args.bottom} {args.right} {args.top}"
+if __name__ == "__main__":
+    import json
+    import subprocess
 
-maap = MAAP()
-job = maap.submitJob(
-    identifier="sar2-d2",
-    algo_id="sar2-d2",
-    version="main",
-    queue="maap-dps-worker-32vcpu-64gb",
-    calibration_file=to_url(calibration_file, get_username(maap)),
-    bbox=bbox,
-)
+    maap = MAAP()
+    args = parse_args(maap, sys.argv[1:])
+    calibration_file = args.calibration_file
+    bbox = f"{args.left} {args.bottom} {args.right} {args.top}"
 
-print(job)
+    name = "sar2-d2"
+    version = (
+        subprocess.run(["git", "tag", "--points-at", "HEAD"], capture_output=True)
+        .stdout.decode()
+        .strip()
+    ) or (
+        subprocess.run(["git", "branch", "--show-current", "HEAD"], capture_output=True)
+        .stdout.decode()
+        .strip()
+    )
+
+    result = maap.submitJob(
+        identifier="sar2-d2",
+        algo_id=name,
+        version=version,
+        queue="maap-dps-worker-32vcpu-64gb",
+        calibration_file=calibration_file,
+        bbox=bbox,
+    )
+    job_id = result.id
+    error_details = result.error_details
+
+    if not job_id:
+        die(f"{error_details}" if error_details else json.dumps(result, indent=2))
+
+    print(f"Submitted job for algorithm {name}:{version} with job ID {job_id}")
