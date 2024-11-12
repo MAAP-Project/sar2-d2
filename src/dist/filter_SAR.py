@@ -288,14 +288,10 @@ def tv_bregman(X: np.ndarray, **kwargs) -> np.ndarray:
     https://scikit-image.org/docs/stable/api/skimage.restoration.html#skimage.restoration.denoise_tv_bregman
     """
     lamb = kwargs.get('lambda_value', -1)
-    print('bregman', lamb)
-    print(np.nanmean(X))
-
     X_db = np.log10(X, out=np.full(X.shape, np.nan), where=(~np.isnan(X)))
     X_db[np.isnan(X)] = -30
     X_db[np.isinf(X_db)] = -30  # Replace -inf with -30
 
-    print(np.nanmean(X_db))
     X_db_dspkl = denoise_tv_bregman(X_db, weight=lamb)
     X_dspkl = np.power(10, X_db_dspkl)
     X_dspkl[np.isnan(X)] = np.nan

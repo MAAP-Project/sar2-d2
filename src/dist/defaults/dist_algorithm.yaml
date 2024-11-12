@@ -59,21 +59,9 @@ runconfig:
             # algorithm parameter
             algorithm_parameters:
 
-            # placeholder for inundated vegetation 
+            # placeholder for inundated vegetation
             mean_backscattering:
             standard_deviation_backscattering:
-
-        static_ancillary_file_group:
-
-            # Static ancillary input should be given
-            # when flag is True. 
-            static_ancillary_inputs_flag: True
-
-            # MGRS database sqlite file
-            mgrs_database_file:
-
-            # MGRS collection database sqlite file
-            mgrs_collection_database_file:
 
         primary_executable:
             product_type: DSWX_NI
@@ -96,6 +84,12 @@ runconfig:
             # output product spacing
             output_spacing: 30
 
+        processing_parameters:
+            threshold: 5
+            debug_mode: False
+            filter_lambda: 20
+            forest_mask_threshold: -35 # dB
+
         browse_image_group:
             # Save a full-res Cloud-Optimized GEOTIFF DSWx-S1 browse image and
             # a modified-resolution PNG of the browse image for DSWx-S1
@@ -114,22 +108,22 @@ runconfig:
             # Flag to collapse water classes if set to True. Default is True.
             flag_collapse_wtr_classes: True
 
-            # Flag to exclude inundated vegetation from processing if set to True. 
+            # Flag to exclude inundated vegetation from processing if set to True.
             exclude_inundated_vegetation:  False
 
-            # Flag to set non-water pixels to NoData value if set to True. 
+            # Flag to set non-water pixels to NoData value if set to True.
             set_not_water_to_nodata: False
 
-            # Flag to set HAND mask pixels to NoData value if set to True. 
+            # Flag to set HAND mask pixels to NoData value if set to True.
             set_hand_mask_to_nodata: True
 
-            # Flag to set layover and shadow pixels to NoData value if set to True. 
+            # Flag to set layover and shadow pixels to NoData value if set to True.
             set_layover_shadow_to_nodata: True
-            
-            # Flag to set ocean-masked pixels to NoData value if set to True. 
+
+            # Flag to set ocean-masked pixels to NoData value if set to True.
             set_ocean_masked_to_nodata: False
 
-            # Flag to save Geotiff to output directory if set to True. 
+            # Flag to save Geotiff to output directory if set to True.
             save_tif_to_output: False
 
         log_file: None

@@ -491,26 +491,6 @@ def validate_group_dict(group_cfg: dict) -> None:
     check_write_dir(product_group['sas_output_path'])
     check_write_dir(product_group['scratch_path'])
 
-    static_ancillary_flag = group_cfg[
-        'static_ancillary_file_group']['static_ancillary_inputs_flag']
-
-    if static_ancillary_flag:
-        mgrs_database_file = group_cfg[
-            'static_ancillary_file_group']['mgrs_database_file']
-        mgrs_collection_database_file = group_cfg[
-            'static_ancillary_file_group']['mgrs_collection_database_file']
-
-        if mgrs_database_file is None or mgrs_collection_database_file is None:
-            err_str = f'Static ancillary data flag is {static_ancillary_flag}'\
-                      f'but mgrs_database_file {mgrs_database_file} and ' \
-                      f'mgrs_collection_database_file '\
-                      f'{mgrs_collection_database_file}'
-            logger.error(err_str)
-            raise ValueError(err_str)
-
-        # check_file_path(mgrs_collection_database_file)
-        # check_file_path(mgrs_database_file)
-
 
 @singledispatch
 def wrap_namespace(ob):

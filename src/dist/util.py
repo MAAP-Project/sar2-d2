@@ -28,6 +28,7 @@ np2gdal_conversion = {
   "complex128": 11,
 }
 
+copol = ['HH', 'VV']
 
 def extract_nisar_polarization(input_list):
     """Extract input RTC dataset polarizations
@@ -54,16 +55,23 @@ def extract_nisar_polarization(input_list):
                 f"The file '{input_rtc}' does not exist.")
         with h5py.File(input_rtc, 'r') as src_h5:
             pols = np.sort(src_h5[pol_list_path][()])
-            if len(polarizations) == 0:
-                polarizations = pols.copy()
-            elif not np.all(polarizations == pols):
-                raise ValueError(
-                    "Polarizations of multiple RTC files "
-                    "are not consistent.")
+            # pols = [pol for pol in pols if pol.decode('utf-8') in copol]
+            # pols = [pol.decode('utf-8') for pol in pols]
+            filtered_pols = [pol.decode('utf-8') for pol in pols]
+            # polarizations.append(pols)
+            polarizations.extend(filtered_pols)
 
-    for pol_idx, pol in enumerate(polarizations):
-        pols_rtc = np.append(pols_rtc, pol.decode('utf-8'))
+            # if len(polarizations) == 0:
+            #     polarizations = pols.copy()
+            # elif not np.all(polarizations == pols):
+            #     raise ValueError(
+            #         "Polarizations of multiple RTC files "
+            #         "are not consistent.")
+    # print(polarizations)
 
+    # for pol_idx, pol in enumerate(polarizations):
+    #     pols_rtc = np.append(pols_rtc, pol.decode('utf-8'))
+    pols_rtc = set(list(polarizations))
     return pols_rtc
 
 
