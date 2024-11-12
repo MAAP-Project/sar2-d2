@@ -299,7 +299,7 @@ def dist_workflow(cfg):
     mosaic_mode = 'first'
     mosaic_prefix = 'first'
 
-    resamp_required = False
+    resamp_required = True
     resamp_method = 'nearest'
 
     row_blk_size = 300
@@ -552,6 +552,7 @@ def dist_workflow(cfg):
                     confidence_path_name,
                     np.squeeze(CL_da.values),
                     block_param=block_param,
+                    datatype='float32',
                     geotransform=image_meta['geotransform'],
                     projection=image_meta['projection'],
                     cog_flag=True)
