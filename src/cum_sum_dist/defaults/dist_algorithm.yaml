@@ -1,0 +1,34 @@
+runconfig:
+    name: dist_amp_cumsum_workflow_default 
+
+    groups:
+        input_file_group:
+            # REQUIRED - Single S1 RTC geotiff or
+            #            multiple burst RTC directory containing
+            #            hdf5 metadata and rtc geotiff (directory or files)
+            #            for open water
+            input_file_path:
+
+        primary_executable:
+            product_type: DIST_AMP_CUMSUM
+
+        product_path_group:
+
+            # Directory where SAS can write temporary data
+            scratch_path:
+
+            # SAS writes the output product to the following file.
+            sas_output_path:
+
+            # output product spacing
+            output_spacing: 30
+
+        processing_parameters:
+            threshold: 5
+            debug_mode: False
+            filter_lambda: 20
+            forest_mask_threshold: -35 # dB
+            bootstrap_number: 20
+            confidence_threshold: 0.9
+
+        log_file: None
