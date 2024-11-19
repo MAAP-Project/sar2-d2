@@ -1,10 +1,13 @@
 name: sar2-d2
 channels:
   - conda-forge
-  - nodefaults
+  - nodefaults  # force everything to come from conda-forge channel
 dependencies:
-  - isce3
+  - isce3=0.24.1  # R4.0.4 delivery
   - python >=3.12
+  - pip:
+      - git+https://github.com/MAAP-Project/maap-py.git
+  - sardem  # to download and crop the SRTM DEM
 
 # # Used by conda lock
 # platforms:
