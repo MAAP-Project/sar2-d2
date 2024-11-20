@@ -12,6 +12,8 @@ conda=${CONDA_EXE:-conda}
 thisdir=$(dirname "$(readlink -f "$0")")
 basedir=$(dirname "$(dirname "${thisdir}")")
 
+# Make sure that the SAR2D2_ENV shell environment variable
+# is set. It can be set in the JN, build.sh, run-dps.sh, and conda/run.sh.
 if [[ ! -v SAR2D2_ENV ]]; then
     echo "ERROR: The SAR2D2_ENV environment variable must be set to the name of the conda environment to create/update." 1>&2
     exit 1
