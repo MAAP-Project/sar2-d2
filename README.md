@@ -2,28 +2,30 @@
 
 ## Running the NASA algorithm locally
 
+If you need to create a new environment, or update an existing one, with
+dependencies from the `environment.yml` file, run the following, where
+`<conda-env>` is the name of either an existing environment you want to
+update, or the name of a new environment to create:
+
+```plain
+conda env --name <conda-env> update
+```
+
 You can run the NASA algorithm locally like so:
 
 ```plain
-nasa/run.sh CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
+SAR2D2_ENV=<conda-env> nasa/run.sh CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
 ```
 
 where:
 
+- `<conda-env>` is the name of the conda environment to use, which should
+  be the same name used with the previous "update" command, if you ran it
 - `CALIBRATION_FILE` is the path to calibration file on the file system
 - `LEFT` is the left longitude of your desired bounding box
 - `BOTTOM` is the bottom latitude of your desired bounding box
 - `RIGHT` is the right longitude of your desired bounding box
 - `TOP` is the top latitude of your desired bounding box
-
-As a convenience, this will _automatically_ do the following for you:
-
-1. Create a conda environment named `sar2-d2`, if it does not already exist.
-1. Install all dependencies in `environment.yml` and `environment-dev.yml`
-   whenever the environment is (re-)created or one (or both) of the files have
-   been modified since the environment was (re-)created.
-1. Run the code with the `sar2-d2` environment automatically activated (i.e.,
-   there is no need for you to manually activate the environment).
 
 ## Registering the algorithm
 

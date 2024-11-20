@@ -5,9 +5,10 @@ set -Eeuo pipefail
 conda=${CONDA_EXE:-conda}
 thisdir=$(dirname "$(readlink -f "$0")")
 
-# We must be sure the environment exists before we can run things in it.
-prefix=$("${thisdir}"/install.sh)
-envname=$(basename "${prefix}")
+if [[ ! -v SAR2D2_ENV ]]; then
+    echo "ERROR: The SAR2D2_ENV environment variable must be set to the name of the conda environment to run in." 1>&2
+    exit 1
+fi
 
 # All arguments are passed directly to `conda run`
-"${conda}" run --no-capture-output --name "${envname}" "${@}"
+"${conda}" run --no-capture-output --name "${SAR2D2_ENV}" "${@}"
