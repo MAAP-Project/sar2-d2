@@ -11,7 +11,11 @@ set -Eeuo pipefail
 conda=${CONDA_EXE:-conda}
 thisdir=$(dirname "$(readlink -f "$0")")
 basedir=$(dirname "$(dirname "${thisdir}")")
-envname=$(basename "${basedir}")
+
+if [[ ! -v SAR2D2_ENV ]]; then
+    echo "ERROR: The SAR2D2_ENV environment variable must be set to the name of the conda environment to create/update." 1>&2
+    exit 1
+fi
 
 function environment_prefix() {
     # We must call "conda run" directly, rather than using our run.sh script,
@@ -20,7 +24,7 @@ function environment_prefix() {
     # The value of `result` will either be the environment "prefix" (directory) when the
     # environment exists (captured from stdout), or an error message (captured from
     # stderr) containing the directory as a suffix when the environment does not exist.
-    result=$("${conda}" run --no-capture-output --name "${envname}" printenv CONDA_PREFIX 2>&1 || true)
+    result=$("${conda}" run --no-capture-output --name "${SAR2D2_ENV}" printenv CONDA_PREFIX 2>&1 || true)
 
     # In either case, the "prefix" directory starts with a foward-slash (`/`) and
     # continues to the end of the captured output, so we tell grep to give us only
@@ -32,7 +36,7 @@ function update_environment() {
     (
         set -x
         PIP_REQUIRE_VENV=0 "${conda}" env update --quiet --solver libmamba \
-            --name "${envname}" --file "${1}"
+            --name "${SAR2D2_ENV}" --file "${1}"
     )
 }
 
