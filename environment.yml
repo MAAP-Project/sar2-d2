@@ -3,11 +3,15 @@ channels:
   - conda-forge
   - nodefaults  # force everything to come from conda-forge channel
 dependencies:
-  - isce3=0.24.1  # R4.0.4 delivery
-  - python >=3.12
+  # - isce3=0.24.1  # R4.0.4 delivery
+  - isce3-cuda=0.24.1
+  # - isce3>=0.24.1=*cuda120*
+  - libgdal-hdf5  # required for GCOV (Not sure why this is not handled in isce3?)
+  - libgdal-core
+  - python>=3.12
   - pip:
-      - git+https://github.com/MAAP-Project/maap-py.git
-  - sardem  # to download and crop the SRTM DEM
+      - maap-py
+  - sardem  # to download and crop the DEM
 
 # # Used by conda lock
 # platforms:

@@ -1,19 +1,30 @@
 algorithm_description: Synthetic Aperture Radar Remote Disturbance Detector (SAR2-D2)
 algorithm_name: sar2-d2
-algorithm_version: main
+algorithm_version: gcov_pipeline
 repository_url: https://github.com/MAAP-Project/sar2-d2.git
-docker_container_url: mas.maap-project.org/root/maap-workspaces/custom_images/maap_base:v4.1.0
-disk_space: 20GB
+docker_container_url: mas.maap-project.org/root/maap-workspaces/custom_images/maap_base:v4.1.1
+disk_space: 40GB
 queue: maap-dps-worker-32vcpu-64gb
 build_command: sar2-d2/nasa/build.sh
-run_command: sar2-d2/nasa/run.sh
+run_command: sar2-d2/nasa/run-dps.sh
 inputs:
   config: []
   file:
-    - name: calibration_file
-      description: URL of the calibration file
+    - name: in_file
+      description: URL of the input file
       required: true
   positional:
     - name: bbox
       description: Bounding box as 'LEFT BOTTOM RIGHT TOP'
       required: true
+    - name: in_type
+      description: Product type of the input file. One of: "alos1", "l0b", "rslc". Will be processed through the ALOS1->L0B->RSLC->GCOV pipeline, ending with type specified by `out_type`.
+      required: true
+    - name: out_type
+      description: Product type of the output file. One of: "l0b", "rslc", "gcov". In combination with `in_type`, determines which processing steps occur.
+      required: true
+    - name: gcov_posting
+      description: Posting for pixel spacing for GCOV (square pixels), in same units as EPSG of DEM and bbox. (100 meters is ~0.000833334 degrees.) Defaults to 0.000833334.
+      default: 0.000833334
+      required: false
+      

@@ -265,7 +265,7 @@ def generate_gcov_runconfig(
                 'gcov',
                 '-d', dem_file_path,
                 '-o', output_gcov_path,
-                # '--a-spacing', posting, posting,
+                '--a-spacing', posting, posting,
                 '--top-left', str(bbox.left), str(bbox.top),
                 '--bottom-right', str(bbox.right), str(bbox.bottom),
                 '--out-runconfig', gcov_runconfig_path,
@@ -411,8 +411,8 @@ def parse_args():
         "--posting",
         "--gcov_posting",
         type=float,
-        default=100,
-        help="Posting for pixel spacing for GCOV (square pixels), in same units as DEM's EPSG and bbox. Defaults to 100.",
+        default=0.000833334,
+        help="Posting for pixel spacing for GCOV (square pixels), in same units as DEM's EPSG and bbox. (100 meters is ~0.000833334 degrees.) Defaults to 0.000833334.",
         metavar="GCOV_POSTING",
     )
 
@@ -436,6 +436,8 @@ def main() -> None:
             os.path.basename(args.in_file)
         )[0]
     file_base_name = file_base_name.split(".")[0]
+    file_base_name = file_base_name.removeprefix("L0B_")
+    file_base_name = file_base_name.removeprefix("RSLC_")
 
     # Unpack ALOS-1 zip file
     if in_type == "alos1":

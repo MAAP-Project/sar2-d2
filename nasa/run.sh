@@ -24,7 +24,8 @@ positional arguments:
                         In combination with `in_type`, determines which processing steps
                         occur.
   GCOV_POSTING          Posting for pixel spacing for GCOV (square pixels). Must be
-                        in units of EPSG 4326 (same as DEM and bbox coordinates)."
+                        in units of EPSG 4326 (same as DEM and bbox coordinates).
+                        (100 meters is ~0.000833334 degrees.)"
     exit 1
 fi
 
