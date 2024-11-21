@@ -430,7 +430,7 @@ def main() -> None:
     os.makedirs(out_dir, exist_ok=True)
 
     ## Temporary hack: Download input file from http URL inside the algorithm
-    in_dir = args.out_dur
+    in_dir = args.out_dir
     in_dir = in_dir.replace("output", "input")
     os.makedirs(in_dir, exist_ok=True)
     from maap.maap import MAAP
@@ -454,7 +454,7 @@ def main() -> None:
 
     # Unpack ALOS-1 zip file
     if in_type == "alos1":
-        unzipped_alos1_path = unzip_file(args.in_file, out_dir)
+        unzipped_alos1_path = unzip_file(in_file, out_dir)
 
         # Repackage ALOS-1 to L0B
         l0b_path = os.path.join(out_dir, f"L0B_{file_base_name}.h5")
@@ -463,7 +463,7 @@ def main() -> None:
             output_l0b_path=l0b_path
         )
     elif in_type == "l0b":
-        l0b_file = args.in_file
+        l0b_file = in_file
     else:
         assert in_type == "rslc"
         l0b_file = None
@@ -494,7 +494,7 @@ def main() -> None:
                                   dem_file=dem_file)
     else:
         assert in_type == "rslc"
-        rslc_file = args.in_file
+        rslc_file = in_file
 
     if out_type == "rslc":
         # Exit early
