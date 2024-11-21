@@ -425,15 +425,28 @@ def main() -> None:
     """
     # Parse arguments
     args = parse_args()
+    in_file = args.in_file
     out_dir = args.out_dir
     os.makedirs(out_dir, exist_ok=True)
 
+    ## Temporary hack: Download input file from http URL inside the algorithm
+    in_dir = args.out_dur
+    in_dir = in_dir.replace("output", "input")
+    os.makedirs(in_dir, exist_ok=True)
+    from maap.maap import MAAP
+    maap = MAAP()
+    in_file = maap.downloadGranule(
+        online_access_url=in_file,
+        destination_path=in_dir
+    )
+    ## End temporary hack    
+    
     in_type = args.in_type
     out_type = args.out_type
 
     # file basename, without directory and without extension.
     file_base_name = in_file_base_name = os.path.splitext(
-            os.path.basename(args.in_file)
+            os.path.basename(in_file)
         )[0]
     file_base_name = file_base_name.split(".")[0]
     file_base_name = file_base_name.removeprefix("L0B_")

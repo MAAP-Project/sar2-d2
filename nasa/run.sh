@@ -12,7 +12,7 @@ if [[ $# == 0 || "$1" == "-h" ]]; then
 SAR2-D2: Synthetic Aperture Radar Remote Disturbance Detector
 
 positional arguments:
-  INPUT_FILE            path to input file
+  INPUT_FILE            URL http path to input file
   LEFT                  left longitude of bounding box of the input file
   BOTTOM                bottom latitude of the input file
   RIGHT                 right longitude of the input file
