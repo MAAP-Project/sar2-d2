@@ -1,4 +1,4 @@
-#!/usr/bin/env -S bin/conda/run.sh python
+#!/usr/bin/env -S bin/conda/maap.sh python
 
 """
 Get the status of a job.

@@ -1,4 +1,4 @@
-#!/usr/bin/env -S bin/conda/run.sh python
+#!/usr/bin/env -S bin/conda/maap.sh python
 
 """
 Submit a job using the NASA MAAP algorithm defined in the file nasa/algorithm.yml.
