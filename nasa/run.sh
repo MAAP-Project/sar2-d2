@@ -19,9 +19,9 @@ positional arguments:
   TOP                   top latitude of the input file
   INPUT_PRODUCT_TYPE    Product type of the input file. One of: 'alos1', 'l0b', 'rslc'.
                         Will be processed through the ALOS1->L0B->RSLC->GCOV pipeline,
-                        ending with type specified by `out_type`.
+                        ending with type specified by 'out_type'.
   OUTPUT_PRODUCT_TYPE   Product type of the output file. One of: 'l0b', 'rslc', 'gcov'.
-                        In combination with `in_type`, determines which processing steps
+                        In combination with 'in_type', determines which processing steps
                         occur.
   GCOV_POSTING          Posting for pixel spacing for GCOV (square pixels). Must be
                         in units of EPSG 4326 (same as DEM and bbox coordinates).
@@ -62,7 +62,7 @@ fi
 #         bbox="$2 $3 $4 $5"
 #         in_type="$6"
 #         out_type="$7"
-#         posting="$8"        
+#         posting="$8"
 #     else
 #         # Also allow us to put quotes around the 4 coordinates:
 #         #
@@ -90,7 +90,7 @@ if [[ $# -eq 8 ]]; then
     bbox="$2 $3 $4 $5"
     in_type="$6"
     out_type="$7"
-    posting="$8"        
+    posting="$8"
 else
     # Also allow us to put quotes around the 4 coordinates:
     #
@@ -116,9 +116,5 @@ fi
     --out-dir "${output_dir}" \
     --in_type "${in_type}" \
     --out_type "${out_type}" \
-    --gcov_posting "${posting}" \
-    # --dem /projects/alos1-dist/sar2-d2/nasa/output/dem.tif
-
-
-    
-    
+    --gcov_posting "${posting}"
+# --dem /projects/alos1-dist/sar2-d2/nasa/output/dem.tif

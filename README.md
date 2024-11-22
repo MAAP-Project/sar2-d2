@@ -33,7 +33,7 @@ To register the algorithm (or re-register it after making code changes), run the
 following command:
 
 ```plain
-nasa/algorithm/register.py
+SAR2D2_ENV=<conda-env> nasa/algorithm/register.py
 ```
 
 This will kick off a process to build a new algorithm image, and will output a
@@ -48,7 +48,7 @@ Once the algorithm is registered (or re-registered), you may submit a job using
 the following command:
 
 ```plain
-nasa/job/submit.py CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
+SAR2D2_ENV=<conda-env> nasa/job/submit.py CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
 ```
 
 where the arguments are the same as those used when running the algorithm
@@ -65,7 +65,7 @@ ID of the newly submitted job, which you can use to check the job status.
 After successfully submitting a job, you can use the job ID to check its status:
 
 ```plain
-nasa/job/status.py JOB_ID
+SAR2D2_ENV=<conda-env> nasa/job/status.py JOB_ID
 ```
 
 where `JOB_ID` is the job ID printed out by the job submission command.
@@ -73,7 +73,7 @@ where `JOB_ID` is the job ID printed out by the job submission command.
 You can also get more information about the job, using the following command:
 
 ```plain
-nasa/job/result.py JOB_ID
+SAR2D2_ENV=<conda-env> nasa/job/result.py JOB_ID
 ```
 
 If the job has completed, successfully or not, the command will indicate where
