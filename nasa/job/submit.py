@@ -107,7 +107,8 @@ def add_file_argument(
     # from urllib.parse import urlparse
 
     parser.add_argument(
-        input["name"].upper(),
+        input["name"],
+        metavar=input["name"].upper(),
         # TODO use a function that checks for valid http(s) URLs
         type=str,
         help=input.get("description"),
@@ -125,7 +126,8 @@ def add_positional_argument(
 ) -> argparse.ArgumentParser:
     if default := input.get("default"):
         parser.add_argument(
-            f"--{input['name'].replace('_', '-')}",
+            f"--{input['name']}",
+            metavar=input["name"].upper(),
             help=input.get("description"),
             default=default,
             # Do NOT include 'required' option because all positional arguments are
@@ -135,7 +137,8 @@ def add_positional_argument(
         )
     else:
         parser.add_argument(
-            input["name"].upper(),
+            input["name"],
+            metavar=input["name"].upper(),
             help=input.get("description"),
             # Do NOT include 'required' option because all positional arguments are
             # required by argparse, so argparse throws an error when you include
