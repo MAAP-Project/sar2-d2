@@ -2,28 +2,30 @@
 
 ## Running the NASA algorithm locally
 
+If you need to create a new environment, or update an existing one, with
+dependencies from the `environment.yml` file, run the following, where
+`<conda-env>` is the name of either an existing environment you want to
+update, or the name of a new environment to create:
+
+```plain
+conda env --name <conda-env> update
+```
+
 You can run the NASA algorithm locally like so:
 
 ```plain
-nasa/run.sh CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
+SAR2D2_ENV=<conda-env> nasa/run.sh CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
 ```
 
 where:
 
+- `<conda-env>` is the name of the conda environment to use, which should
+  be the same name used with the previous "update" command, if you ran it
 - `CALIBRATION_FILE` is the path to calibration file on the file system
 - `LEFT` is the left longitude of your desired bounding box
 - `BOTTOM` is the bottom latitude of your desired bounding box
 - `RIGHT` is the right longitude of your desired bounding box
 - `TOP` is the top latitude of your desired bounding box
-
-As a convenience, this will _automatically_ do the following for you:
-
-1. Create a conda environment named `sar2-d2`, if it does not already exist.
-1. Install all dependencies in `environment.yml` and `environment-dev.yml`
-   whenever the environment is (re-)created or one (or both) of the files have
-   been modified since the environment was (re-)created.
-1. Run the code with the `sar2-d2` environment automatically activated (i.e.,
-   there is no need for you to manually activate the environment).
 
 ## Registering the algorithm
 
@@ -31,7 +33,7 @@ To register the algorithm (or re-register it after making code changes), run the
 following command:
 
 ```plain
-nasa/algorithm/register.py
+SAR2D2_ENV=<conda-env> nasa/algorithm/register.py
 ```
 
 This will kick off a process to build a new algorithm image, and will output a
@@ -46,7 +48,7 @@ Once the algorithm is registered (or re-registered), you may submit a job using
 the following command:
 
 ```plain
-nasa/job/submit.py CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
+SAR2D2_ENV=<conda-env> nasa/job/submit.py CALIBRATION_FILE LEFT BOTTOM RIGHT TOP
 ```
 
 where the arguments are the same as those used when running the algorithm
@@ -63,7 +65,7 @@ ID of the newly submitted job, which you can use to check the job status.
 After successfully submitting a job, you can use the job ID to check its status:
 
 ```plain
-nasa/job/status.py JOB_ID
+SAR2D2_ENV=<conda-env> nasa/job/status.py JOB_ID
 ```
 
 where `JOB_ID` is the job ID printed out by the job submission command.
@@ -71,7 +73,7 @@ where `JOB_ID` is the job ID printed out by the job submission command.
 You can also get more information about the job, using the following command:
 
 ```plain
-nasa/job/result.py JOB_ID
+SAR2D2_ENV=<conda-env> nasa/job/result.py JOB_ID
 ```
 
 If the job has completed, successfully or not, the command will indicate where
