@@ -20,8 +20,8 @@ runconfig:
             # SAS writes the output product to the following file.
             sas_output_path:
 
-            # output product spacing
-            output_spacing: 30
+            # output product spacing (default is for ESPG4326)
+            output_spacing: 0.000833334
 
         processing_parameters:
             threshold: 5

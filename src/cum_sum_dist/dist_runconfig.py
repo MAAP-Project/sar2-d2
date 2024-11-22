@@ -11,12 +11,12 @@ import numpy as np
 import yamale
 from ruamel.yaml import YAML
 
-import dist
+import cum_sum_dist
 # from dist import check_gdal_raster_s3
 
 logger = logging.getLogger('sar2-d2')
 
-WORKFLOW_SCRIPTS_DIR = os.path.dirname(dist.__file__)
+WORKFLOW_SCRIPTS_DIR = os.path.dirname(cum_sum_dist.__file__)
 
 # Potential polarization scenarios for DSWx-S1
 # NOTE: DO NOT CHANGE THE ORDER of the items in the dictionary below.

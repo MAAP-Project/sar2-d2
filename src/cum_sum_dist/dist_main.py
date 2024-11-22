@@ -9,11 +9,11 @@ from osgeo import gdal
 from rasterio.windows import Window
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
-from dist import (reader_ni,
-                  util,
-                  filter_SAR,
-                  generate_log)
-from dist.dist_runconfig import (_get_parser,
+from cum_sum_dist import (reader_ni,
+                          util,
+                          filter_SAR,
+                          generate_log)
+from cum_sum_dist.dist_runconfig import (_get_parser,
                                  RunConfig,)
 
 
@@ -396,6 +396,7 @@ def dist_workflow(cfg):
 
         ds = xr.concat(da_stack, dim='time')
         sorted_ds = ds.sortby('time')
+
         da_min_vh = sorted_ds.min('time').sel(polarization='HH')
 
         fmask = (da_min_vh > forest_cross_thres).persist()
@@ -436,6 +437,18 @@ def dist_workflow(cfg):
                 cog_flag=True
             )
             
+            da_mean = sorted_ds.mean('time').sel(polarization=pol_single)
+            mean_backscatter_path = f'{output_dir}/mean_backscatter_{pol_single}.tif'
+
+            util.write_raster_block(
+                mean_backscatter_path,
+                np.squeeze(da_mean.values),
+                block_param=block_param,
+                geotransform=image_meta['geotransform'],
+                projection=image_meta['projection'],
+                datatype='float32',
+                cog_flag=True)
+
             if proc_param.debug_mode:
 
                 change_path_name = f'{scratch_dir}/cumsum_maximum_{pol_single}.tif'
@@ -612,7 +625,6 @@ def dist_workflow(cfg):
 
                     mean_X_date = X.sel(time=time_step).sel(polarization=pol_single).mean(dim=('x', 'y'), skipna=True).item()
                     mean_cumsum_result_date = cumsum_result_diff_single_date.sel(polarization=pol_single).mean(dim=('x', 'y'), skipna=True).item()
-                    print(f'output {date_str}, {pol_single} - > {mean_cumsum_result_date}', )
                     # Check if S_date has any non-zero data
                     if np.isnan(mean_X_date):
                         continue
