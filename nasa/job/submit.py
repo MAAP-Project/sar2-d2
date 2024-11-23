@@ -77,6 +77,11 @@ def build_parser(
     )
 
     parser.add_argument(
+        "--identifier",
+        help="an identifier you wish to use to identify the job",
+        default="unidentified",
+    )
+    parser.add_argument(
         "--version",
         help="version of the algorithm to use",
         default=default_version,
