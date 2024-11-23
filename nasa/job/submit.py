@@ -198,7 +198,6 @@ if __name__ == "__main__":
     username = get_username(maap)
     result = maap.submitJob(
         username=username,
-        identifier=name,
         algo_id=name,
         version=args.version,
         queue=args.queue,
