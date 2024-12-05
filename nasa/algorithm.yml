@@ -5,7 +5,7 @@ repository_url: https://github.com/MAAP-Project/sar2-d2.git
 docker_container_url: mas.maap-project.org/root/maap-workspaces/custom_images/maap_base:v4.1.0
 build_command: sar2-d2/nasa/build.sh
 run_command: sar2-d2/nasa/run-dps.sh
-queue: maap-dps-gpu_worker-16gb
+queue: maap-dps-gpu-worker-16gb
 disk_space: 40GB
 inputs:
   config: []
