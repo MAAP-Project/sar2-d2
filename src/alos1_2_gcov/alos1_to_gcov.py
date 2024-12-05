@@ -177,7 +177,7 @@ def generate_rslc_runconfig(input_l0b_path, output_rslc_path, dem_file, out_dir)
     runconfig['runconfig']['groups']['product_path_group']['sas_output_file'] = \
                 output_rslc_path
 
-    # save into the output directory
+    # save runconfig into the output directory
     runconfig_path = os.path.join(out_dir,'rslc.yaml')
     with open(runconfig_path, 'w') as rc:
         yaml.dump(runconfig, rc)
@@ -430,8 +430,7 @@ def main() -> None:
     os.makedirs(out_dir, exist_ok=True)
 
     ## Temporary hack: Download input file from http URL inside the algorithm
-    in_dir = args.out_dir
-    in_dir = in_dir.replace("output", "input")
+    in_dir = out_dir.replace("output", "input")
     os.makedirs(in_dir, exist_ok=True)
     from maap.maap import MAAP
     maap = MAAP()
@@ -457,10 +456,10 @@ def main() -> None:
         unzipped_alos1_path = unzip_file(in_file, out_dir)
 
         # Repackage ALOS-1 to L0B
-        l0b_path = os.path.join(out_dir, f"L0B_{file_base_name}.h5")
-        l0b_file = alos1_to_l0b(
+        l0b_file = os.path.join(out_dir, f"L0B_{file_base_name}.h5")
+        alos1_to_l0b(
             input_alos1_path=unzipped_alos1_path,
-            output_l0b_path=l0b_path
+            output_l0b_path=l0b_file
         )
     elif in_type == "l0b":
         l0b_file = in_file
@@ -488,10 +487,12 @@ def main() -> None:
 
     # Focus L0B to RSLC
     if in_type in ("alos1", "l0b"):
+        print(f"{out_dir=}")
         rslc_file = os.path.join(out_dir, f"RSLC_{file_base_name}.h5")
+        print(f"{rslc_file=}")
         l0b_to_rslc(input_l0b_path=l0b_file,
-                                  output_rslc_path=rslc_file,
-                                  dem_file=dem_file)
+                    output_rslc_path=rslc_file,
+                    dem_file=dem_file)
     else:
         assert in_type == "rslc"
         rslc_file = in_file
