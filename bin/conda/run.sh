@@ -14,5 +14,7 @@ if [[ ! -v SAR2D2_ENV ]]; then
     exit 1
 fi
 
+"${conda}" list -n "${SAR2D2_ENV}" cuda
+
 # All arguments are passed directly to `conda run`
 "${conda}" run --no-capture-output --name "${SAR2D2_ENV}" "${@}"
