@@ -4,9 +4,9 @@ channels:
   - nodefaults  # force everything to come from conda-forge channel
 dependencies:
   # - isce3=0.24.1  # R4.0.4 delivery
-  # - isce3-cuda=0.24.1
-  # - cuda-version=11
-  - isce3>=0.24.1=*cuda118*
+  - isce3-cuda=0.24.1
+  - cuda-version=12
+  # - isce3>=0.24.1=*cuda118*
   - libgdal-hdf5  # required for GCOV (Not sure why this is not handled in isce3?)
   - libgdal-core
   - python>=3.12
