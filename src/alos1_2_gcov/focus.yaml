@@ -43,7 +43,7 @@ runconfig:
 
         worker:
             # Whether or not to use GPU, optional. Defaults to True if available.
-            gpu_enabled: True
+            gpu_enabled: False
 
             # Index of the GPU to use for processing, optional. Defaults to the
             # first available CUDA device. Ignored if *gpu_enabled* is False.
