@@ -1,4 +1,4 @@
-#!/usr/bin/env -S bin/conda/run.sh python
+#!/usr/bin/env -S bin/conda/maap.sh python
 
 """
 Submit a job using the NASA MAAP algorithm defined in the file nasa/algorithm.yml.
@@ -13,11 +13,13 @@ If there is no tag value, the branch name is used.
 """
 
 import argparse
+import re
 import sys
 from pathlib import Path
-from typing import NoReturn, Sequence
+from typing import Any, Mapping, NoReturn, Sequence
 
 import requests
+import yaml
 from maap.maap import MAAP  # type: ignore
 
 
@@ -61,51 +63,10 @@ def to_url(path: str, username: str) -> str:
     return url
 
 
-def parse_args(username: str, args: Sequence[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Submit a MAAP DPS job")
-    parser.add_argument(
-        "calibration_file",
-        type=lambda arg: to_url(arg, username),
-        help="path to calibration file",
-        metavar="calibration-file",
-    )
-    parser.add_argument(
-        "left",
-        type=float,
-        help="left longitude of your desired bounding box",
-    )
-    parser.add_argument(
-        "bottom",
-        type=float,
-        help="bottom latitude of your desired bounding box",
-    )
-    parser.add_argument(
-        "right",
-        type=float,
-        help="right longitude of your desired bounding box",
-    )
-    parser.add_argument(
-        "top",
-        type=float,
-        help="top latitude of your desired bounding box",
-    )
-
-    return parser.parse_args(args)
-
-
-if __name__ == "__main__":
-    import json
-    import os
-    import subprocess
-
-    maap = MAAP()
-    username = get_username(maap)
-    args = parse_args(username, sys.argv[1:])
-    calibration_file = args.calibration_file
-    bbox = f"{args.left} {args.bottom} {args.right} {args.top}"
-
-    name = os.environ["CONDA_DEFAULT_ENV"]
-    version = (
+def build_parser(
+    parser: argparse.ArgumentParser, config: Mapping[str, Any]
+) -> argparse.ArgumentParser:
+    default_version = (
         subprocess.run(["git", "tag", "--points-at", "HEAD"], capture_output=True)
         .stdout.decode()
         .strip()
@@ -115,14 +76,132 @@ if __name__ == "__main__":
         .strip()
     )
 
+    parser.add_argument(
+        "--identifier",
+        help="an identifier you wish to use to identify the job",
+        default="unidentified",
+    )
+    parser.add_argument(
+        "--version",
+        help="version of the algorithm to use",
+        default=default_version,
+    )
+    parser.add_argument(
+        "--queue",
+        "-q",
+        help="name of the job queue to use",
+        default=config.get("queue"),
+    )
+
+    inputs = config.get("inputs", {})
+    file_inputs = inputs.get("file", [])
+    positional_inputs = inputs.get("positional", [])
+
+    for file_input in file_inputs:
+        add_file_argument(parser, file_input)
+
+    for positional_input in positional_inputs:
+        add_positional_argument(parser, positional_input)
+
+    return parser
+
+
+def add_file_argument(
+    parser: argparse.ArgumentParser, input: Mapping[str, Any]
+) -> argparse.ArgumentParser:
+    # from urllib.parse import urlparse
+
+    parser.add_argument(
+        input["name"],
+        metavar=input["name"].upper(),
+        # TODO use a function that checks for valid http(s) URLs
+        type=str,
+        help=input.get("description"),
+        # Do NOT include 'required' option because all positional arguments are
+        # required by argparse, so argparse throws an error when you include
+        # this option.
+        # required=input.get("required", False),
+    )
+
+    return parser
+
+
+def add_positional_argument(
+    parser: argparse.ArgumentParser, input: Mapping[str, Any]
+) -> argparse.ArgumentParser:
+    if default := input.get("default"):
+        parser.add_argument(
+            f"--{input['name']}",
+            metavar=input["name"].upper(),
+            help=input.get("description"),
+            default=default,
+            # Do NOT include 'required' option because all positional arguments are
+            # required by argparse, so argparse throws an error when you include
+            # this option.
+            # required=input.get("required", False),
+        )
+    else:
+        parser.add_argument(
+            input["name"],
+            metavar=input["name"].upper(),
+            help=input.get("description"),
+            # Do NOT include 'required' option because all positional arguments are
+            # required by argparse, so argparse throws an error when you include
+            # this option.
+            # required=input.get("required", False),
+        )
+
+    return parser
+
+
+def parse_args(args: Sequence[str]) -> tuple[str, argparse.Namespace]:
+    default_config_yaml = Path(__file__).parent.parent / "algorithm.yml"
+
+    parser = argparse.ArgumentParser(
+        description="Submit a MAAP DPS job",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    # TODO support alternative config yaml file (only nasa/algorithm.yml for now)
+    # TODO see argparse.parse_known_args for help with this
+    # parser.add_argument(
+    #     "--config",
+    #     type=str,
+    #     help="path to algorithm configuration YAML file",
+    #     metavar="YAML",
+    #     default=default_config_yaml.relative_to(Path.cwd()),
+    # )
+
+    config = yaml.safe_load(default_config_yaml.read_text())
+    name = config["algorithm_name"]
+
+    build_parser(parser, config)
+
+    return name, parser.parse_args(args)
+
+
+if __name__ == "__main__":
+    import json
+    import os
+    import subprocess
+
+    name, args = parse_args(sys.argv[1:])
+    version = args.version
+    queue = args.queue
+    inputs = {
+        name: value
+        for name, value in vars(args).items()
+        if name not in {"version", "queue"}
+    }
+
+    maap = MAAP()
+    username = get_username(maap)
     result = maap.submitJob(
         username=username,
-        identifier=name,
         algo_id=name,
-        version=version,
-        queue="maap-dps-worker-32vcpu-64gb",
-        calibration_file=calibration_file,
-        bbox=bbox,
+        version=args.version,
+        queue=args.queue,
+        **inputs,
     )
     job_id = result.id
     error_details = result.error_details
@@ -130,4 +209,4 @@ if __name__ == "__main__":
     if not job_id:
         die(f"{error_details}" if error_details else json.dumps(result, indent=2))
 
-    print(f"Submitted job for algorithm {name}:{version} with job ID {job_id}")
+    print(f"Submitted job for algorithm {name}:{args.version} with job ID {job_id}")

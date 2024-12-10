@@ -1,0 +1,68 @@
+# Structure inherited from L0 PGEs covers inputs, outputs, and identification.
+runconfig:
+    groups:
+        input_file_group:
+            # REQUIRED List of NISAR raw data products in L0B format.
+            #
+            # Example for single-mode processing:
+            # input_file_path:
+            # - PATH_TO_L0B_FILE.h5
+            #
+            # Example for mixed-mode processing:
+            # input_file_path:
+            # - PATH_TO_L0B_FILE_1.h5
+            # - PATH_TO_L0B_FILE_2.h5
+            # - PATH_TO_L0B_FILE_3.h5
+            input_file_path:
+            -
+
+        dynamic_ancillary_file_group:
+            # Digital elevation model, optional.
+            dem_file: null
+
+            # PLACEHOLDER - Digital elevation model file description, optional
+            dem_file_description:
+
+        product_path_group:
+            # Directory where SAS can write temporary data
+            scratch_path: .
+
+            # SAS writes output product to the following file. PGE may rename.
+            sas_output_file: ./slc.h5
+
+        primary_executable:
+            # Handy to set to "SLC" until other ISCE tools updated.
+            product_type: RSLC
+            product_version: 0.1.0
+            product_doi: (NOT SPECIFIED)
+            composite_release_id: A10000
+            processing_type: Custom
+            mission_id: null  # null to get from first L0B input
+            processing_center: MAAP
+            partial_granule_id: (NOT SPECIFIED)
+
+        worker:
+            # Whether or not to use GPU, optional. Defaults to True if available.
+            gpu_enabled: True
+
+            # Index of the GPU to use for processing, optional. Defaults to the
+            # first available CUDA device. Ignored if *gpu_enabled* is False.
+            gpu_id: 0
+
+        processing:
+
+            # Processing stage switches, mostly for debug.
+            # Any missing stages assumed True
+            is_enabled:
+                # elevation antenna pattern correction
+                eap: False
+
+            # Scale factor to apply to data before float16 encoding, optional.
+            # Default is 1.0.
+            # The largest representable float16 value is 65504.
+            # NOTE This is ad-hoc until the processor is radiometrically calibrated.
+            # As of 4 Nov 2024, B Hawkins suggested using 9.26 for ALOS-1
+            # as an ad-hoc solution in lieu of providing an absolute
+            # radiometric calibration file as input.
+            encoding_scale_factor: 9.26
+
