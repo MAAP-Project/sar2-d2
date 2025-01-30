@@ -1,29 +1,25 @@
-import os
 import logging
-import warnings
-from dataclasses import dataclass
-from collections import Counter
-
-from abc import ABC, abstractmethod
-from collections.abc import Iterator
-import h5py
+import math
 import mimetypes
-import numpy as np
-from osgeo import osr, gdal
-from osgeo.gdal import Dataset
+import os
+import tempfile
+import warnings
+from abc import ABC, abstractmethod
+from collections import Counter
+from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+
+import h5py
+import numpy as np
 import rasterio
+from osgeo import gdal, ogr, osr
+from osgeo.gdal import Dataset
+from pyproj import Transformer
 from rasterio.transform import Affine
 from rasterio.windows import Window
-from typing import Any
-import math
-import rasterio
-from dataclasses import dataclass
-import numpy as np
-from osgeo import gdal, osr, ogr
-from pyproj import Transformer
 from scipy.signal import convolve2d
-import tempfile
 
 
 def requires_reprojection(
@@ -2022,50 +2018,3 @@ def slice_gen(
         for start_idx in range(0, num_total_complete, batch_size):
             stop_idx = start_idx + batch_size
             yield slice(start_idx, stop_idx)
-
-
-def run(cfg):
-    """Generate mosaic workflow with user-defined args stored
-    in dictionary runconfig 'cfg'
-
-    Parameters:
-    -----------
-    cfg: RunConfig
-        RunConfig object with user runconfig options
-    """
-
-    # Mosaicking parameters
-    processing_cfg = cfg.groups.processing
-
-    input_list = cfg.groups.input_file_group.input_file_path
-
-    mosaic_cfg = processing_cfg.mosaic
-    mosaic_mode = mosaic_cfg.mosaic_mode
-    mosaic_prefix = mosaic_cfg.mosaic_prefix
-
-    resamp_required = mosaic_cfg.resamp_required
-    resamp_method = mosaic_cfg.resamp_method
-    resamp_out_res = mosaic_cfg.resamp_out_res
-
-    scratch_dir = cfg.groups.product_path_group.scratch_path
-    os.makedirs(scratch_dir, exist_ok=True)
-
-    row_blk_size = mosaic_cfg.read_row_blk_size
-    col_blk_size = mosaic_cfg.read_col_blk_size
-
-    # Create reader object
-    reader = RTCReader(
-        row_blk_size=row_blk_size,
-        col_blk_size=col_blk_size,
-    )
-
-    # Mosaic input RTC into output Geotiff
-    reader.process_rtc_hdf5(
-        input_list,
-        scratch_dir,
-        mosaic_mode,
-        mosaic_prefix,
-        resamp_method,
-        resamp_out_res,
-        resamp_required,
-    )
