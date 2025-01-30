@@ -8,6 +8,8 @@ dependencies:
   - pip:
       - git+https://github.com/MAAP-Project/maap-py.git
   - sardem  # to download and crop the SRTM DEM
+  - opencv
+  - scikit-image
 
 # # Used by conda lock
 # platforms:
