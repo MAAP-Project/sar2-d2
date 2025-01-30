@@ -4,7 +4,7 @@ import sys
 
 def configure_log_file(log_file):
     # create logger
-    logger = logging.getLogger('dswx_sar')
+    logger = logging.getLogger("dswx_sar")
     logger.setLevel(logging.DEBUG)
 
     # create console handler and set level to debug
@@ -12,7 +12,7 @@ def configure_log_file(log_file):
     ch.setLevel(logging.DEBUG)
 
     # create formatter
-    formatter = logging.Formatter('%(message)s')
+    formatter = logging.Formatter("%(message)s")
 
     # add formatter to ch
     ch.setFormatter(formatter)
@@ -24,8 +24,10 @@ def configure_log_file(log_file):
         file_handler = logging.FileHandler(log_file)
 
         # Log file format
-        msgfmt = ('%(asctime)s.%(msecs)03d, %(levelname)s, sar2-d2, '
-                  '%(module)s, %(lineno)d, "%(message)s"')
+        msgfmt = (
+            "%(asctime)s.%(msecs)03d, %(levelname)s, sar2-d2, "
+            '%(module)s, %(lineno)d, "%(message)s"'
+        )
 
         log_file_formatter = logging.Formatter(msgfmt, "%Y-%m-%d %H:%M:%S")
         file_handler.setFormatter(log_file_formatter)
@@ -40,19 +42,20 @@ class Logger(object):
     """
     Class to redirect stdout and stderr to the logger
     """
-    def __init__(self, logger, level, prefix=''):
+
+    def __init__(self, logger, level, prefix=""):
         """
         Class constructor
         """
         self.logger = logger
         self.level = level
         self.prefix = prefix
-        self.buffer = ''
+        self.buffer = ""
 
     def write(self, message):
 
         # Add message to the buffer until "\n" is found
-        if '\n' not in message:
+        if "\n" not in message:
             self.buffer += message
             return
 
@@ -60,12 +63,12 @@ class Logger(object):
 
         # check if there is any character after the last \n
         # if so, move it to the buffer
-        message_list = message.split('\n')
-        if not message.endswith('\n'):
+        message_list = message.split("\n")
+        if not message.endswith("\n"):
             self.buffer = message_list[-1]
             message_list = message_list[:-1]
         else:
-            self.buffer = ''
+            self.buffer = ""
 
         # print all characters before the last \n
         for line in message_list:
@@ -75,7 +78,7 @@ class Logger(object):
 
     def flush(self):
         self.logger.log(self.level, self.buffer)
-        self.buffer = ''
+        self.buffer = ""
 
 
 def create_logger(log_file, full_log_formatting=None):
@@ -92,7 +95,7 @@ def create_logger(log_file, full_log_formatting=None):
               Logger object
     """
     # create logger
-    logger = logging.getLogger('dswx_sar')
+    logger = logging.getLogger("dswx_sar")
     logger.setLevel(logging.DEBUG)
 
     # create console handler and set level to debug
@@ -102,12 +105,14 @@ def create_logger(log_file, full_log_formatting=None):
     # create formatter
     # configure full log format, if enabled
     if full_log_formatting:
-        msgfmt = ('%(asctime)s.%(msecs)03d, %(levelname)s, sar2-d2, '
-                  '%(module)s, 999999, %(pathname)s:%(lineno)d, "%(message)s"')
+        msgfmt = (
+            "%(asctime)s.%(msecs)03d, %(levelname)s, sar2-d2, "
+            '%(module)s, 999999, %(pathname)s:%(lineno)d, "%(message)s"'
+        )
 
         formatter = logging.Formatter(msgfmt, "%Y-%m-%d %H:%M:%S")
     else:
-        formatter = logging.Formatter('%(message)s')
+        formatter = logging.Formatter("%(message)s")
 
     # add formatter to ch
     ch.setFormatter(formatter)
@@ -124,6 +129,6 @@ def create_logger(log_file, full_log_formatting=None):
         logger.addHandler(file_handler)
 
     sys.stdout = Logger(logger, logging.INFO)
-    sys.stderr = Logger(logger, logging.ERROR, prefix='[StdErr] ')
+    sys.stderr = Logger(logger, logging.ERROR, prefix="[StdErr] ")
 
     return logger
