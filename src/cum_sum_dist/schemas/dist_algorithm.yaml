@@ -26,7 +26,7 @@ runconfig:
             # according to proper file naming conventions.
             sas_output_path: str()
 
-            # DSWx-NI output spacing
-            output_spacing: num(min=1, required=False)
+            # output spacing
+            output_spacing: num(min=0, required=False)
 
         log_file: str(required=False)
