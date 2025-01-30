@@ -115,16 +115,20 @@ def read_metadata_hdf5(input_rtc):
         zero_dopp_start = src_h5[dswx_meta_mapping["RTC_SENSING_START_TIME"]][
             ()
         ].decode()
-        zero_dopp_end = src_h5[dswx_meta_mapping["RTC_SENSING_END_TIME"]][()].decode()
+        zero_dopp_end = src_h5[dswx_meta_mapping["RTC_SENSING_END_TIME"]][
+            ()
+        ].decode()
         frame_number = src_h5[dswx_meta_mapping["RTC_FRAME_NUMBER"]][()]
         track_number = src_h5[dswx_meta_mapping["RTC_TRACK_NUMBER"]][()]
-        abs_orbit_number = src_h5[dswx_meta_mapping["RTC_ABSOLUTE_ORBIT_NUMBER"]][()]
+        abs_orbit_number = src_h5[
+            dswx_meta_mapping["RTC_ABSOLUTE_ORBIT_NUMBER"]
+        ][()]
         rtc_pols = src_h5[dswx_meta_mapping["RTC_POL"]][()]
         rtc_decoded_pol = [pol.decode("utf-8") for pol in rtc_pols]
         try:
-            input_slc_granules = src_h5[dswx_meta_mapping["RTC_INPUT_L1_SLC_GRANULES"]][
-                (0)
-            ].decode()
+            input_slc_granules = src_h5[
+                dswx_meta_mapping["RTC_INPUT_L1_SLC_GRANULES"]
+            ][(0)].decode()
         except:
             print("RTC_INPUT_L1_SLC_GRANULES is not available")
     dswx_metadata_dict = {
@@ -196,7 +200,9 @@ def get_lonlat(xcoord, ycoord, epsg):
 
     Point = ogr.Geometry(ogr.wkbPoint)
     Point.AddPoint(xcoord, ycoord)  # use your coordinates here
-    Point.AssignSpatialReference(InSR)  # tell the point what coordinates it's in
+    Point.AssignSpatialReference(
+        InSR
+    )  # tell the point what coordinates it's in
     Point.TransformTo(OutSR)  # project it to the out spatial reference
     return Point.GetX(), Point.GetY()
 
@@ -255,7 +261,9 @@ def get_rtc_stack_block(filename_list, path, blocksize, block_ind, scale="db"):
     base_lr_x = np.max(ref_lon_rtc)
     base_lr_y = ref_lat_rtc[row_end]
 
-    target_rtc_set = np.empty([block_rows_data, refcols, number_scene], dtype=float)
+    target_rtc_set = np.empty(
+        [block_rows_data, refcols, number_scene], dtype=float
+    )
 
     for find, fname in enumerate(filename_list):
         print("file reading", find, fname)
@@ -288,10 +296,18 @@ def get_rtc_stack_block(filename_list, path, blocksize, block_ind, scale="db"):
         #     int(target_ul_y_ind),
         #     int(col_sub), int(row_sub))
 
-        off_x_start = np.round((lon_rtc[target_ul_x_ind] - base_ul_x) / lon_spacing)
-        off_x_end = np.round((lon_rtc[target_lr_x_ind] - base_lr_x) / lon_spacing)
-        off_y_start = -np.round((lat_rtc[target_ul_y_ind] - base_ul_y) / lat_spacing)
-        off_y_end = -np.round((lat_rtc[target_lr_y_ind] - base_lr_y) / lat_spacing)
+        off_x_start = np.round(
+            (lon_rtc[target_ul_x_ind] - base_ul_x) / lon_spacing
+        )
+        off_x_end = np.round(
+            (lon_rtc[target_lr_x_ind] - base_lr_x) / lon_spacing
+        )
+        off_y_start = -np.round(
+            (lat_rtc[target_ul_y_ind] - base_ul_y) / lat_spacing
+        )
+        off_y_end = -np.round(
+            (lat_rtc[target_lr_y_ind] - base_lr_y) / lat_spacing
+        )
 
         if off_y_start < 0:
             off_y_start = 0
@@ -418,9 +434,10 @@ def read_hdf_latlon(intput_h5_path, path):
 
 
 def read_geodata_hdf5(input_rtc):
-    """extract data from RTC Geo information and store it as a dictionary
+    """
+    Extract data from RTC Geo information and store it as a dictionary
 
-    parameters
+    Parameters
     ----------
     input_rtc: str
         The HDF5 RTC input file path
@@ -450,9 +467,9 @@ def read_geodata_hdf5(input_rtc):
         epsg = src_h5[f"{geo_name_mapping['proj']}"][()]
 
     # Geo transformation
-    geotransform = Affine.translation(xmin - xres / 2, ymin - yres / 2) * Affine.scale(
-        xres, yres
-    )
+    geotransform = Affine.translation(
+        xmin - xres / 2, ymin - yres / 2
+    ) * Affine.scale(xres, yres)
 
     # Coordinate Reference System
     crs = f"EPSG:{epsg}"
@@ -461,7 +478,8 @@ def read_geodata_hdf5(input_rtc):
 
 
 def block_param_generator(lines_per_block, data_shape, pad_shape):
-    """Generator for block specific parameter class.
+    """
+    Generator for block specific parameter class.
 
     Parameters
     ----------
@@ -494,7 +512,9 @@ def block_param_generator(lines_per_block, data_shape, pad_shape):
         middle_block = not first_block and not last_block
 
         # Determine block size; Last block uses leftover lines
-        block_length = data_length - start_line if last_block else lines_per_block
+        block_length = (
+            data_length - start_line if last_block else lines_per_block
+        )
         # Determine padding along length. Full padding for middle blocks
         # Half padding for start and end blocks
         read_length_pad = pad_length if middle_block else half_pad_length
@@ -509,7 +529,9 @@ def block_param_generator(lines_per_block, data_shape, pad_shape):
         # If applicable, save negative start line as deficit
         # to account for later
         read_start_line, start_line_deficit = (
-            (0, read_start_line) if read_start_line < 0 else (read_start_line, 0)
+            (0, read_start_line)
+            if read_start_line < 0
+            else (read_start_line, 0)
         )
 
         # Initial guess at number lines to read; accounting
@@ -586,8 +608,10 @@ class BlockParam:
 
 
 def get_raster_block(raster_path, block_param):
-    """Get a block of data from raster.
-        Raster can be a HDF5 file or a GDAL-friendly raster
+    """
+    Get a block of data from raster.
+
+    Raster can be a HDF5 file or a GDAL-friendly raster
 
     Parameters
     ----------
@@ -621,7 +645,10 @@ def get_raster_block(raster_path, block_param):
 
         # Pad data_block with zeros according to pad_length/pad_width
         data_block = np.pad(
-            data_block, block_param.block_pad, mode="constant", constant_values=0
+            data_block,
+            block_param.block_pad,
+            mode="constant",
+            constant_values=0,
         )
 
         if data_block.ndim == 1:
@@ -717,7 +744,9 @@ def write_raster_block(
     # data.ndim == 1
     else:
         ds_data.GetRasterBand(1).WriteArray(
-            np.reshape(data, [1, len(data)]), xoff=0, yoff=block_param.write_start_line
+            np.reshape(data, [1, len(data)]),
+            xoff=0,
+            yoff=block_param.write_start_line,
         )
     del ds_data
 
@@ -773,7 +802,9 @@ def _save_as_cog(
     elif ovr_resamp_algorithm is None:
         ovr_resamp_algorithm = "CUBICSPLINE"
 
-    gdal_ds.BuildOverviews(ovr_resamp_algorithm, overviews_list, gdal.TermProgress_nocb)
+    gdal_ds.BuildOverviews(
+        ovr_resamp_algorithm, overviews_list, gdal.TermProgress_nocb
+    )
 
     del gdal_ds  # close the dataset (Python object and pointers)
     external_overview_file = filename + ".ovr"
@@ -814,7 +845,15 @@ def _save_as_cog(
 
 
 def resample_and_crop_with_gdalwarp(
-    input_file, output_file, start_x, start_y, end_x, end_y, spacing_x, spacing_y, epsg
+    input_file,
+    output_file,
+    start_x,
+    start_y,
+    end_x,
+    end_y,
+    spacing_x,
+    spacing_y,
+    epsg,
 ):
     """
     Resample and crop a GeoTIFF using gdalwarp, overwriting the existing file, with EPSG projection.

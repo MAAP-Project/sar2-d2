@@ -96,14 +96,17 @@ def weightingarr(im, winsize, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT):
     w_t_arr = np.zeros(im.shape)
     w_t_arr[ci <= cu] = 1
     w_t_arr[(ci > cu) & (ci < cmax)] = np.exp(
-        (-k * (ci[(ci > cu) & (ci < cmax)] - cu)) / (cmax - ci[(ci > cu) & (ci < cmax)])
+        (-k * (ci[(ci > cu) & (ci < cmax)] - cu))
+        / (cmax - ci[(ci > cu) & (ci < cmax)])
     )
     w_t_arr[ci >= cmax] = 0
 
     return w_t_arr, window_mean, window_std
 
 
-def lee_enhanced_filter(img, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT, **kwargs):
+def lee_enhanced_filter(
+    img, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT, **kwargs
+):
     """
     Enhanced Lee filter for SAR image
 
@@ -237,7 +240,11 @@ def guided_filter(img, **kwargs):
     img_db_filled = fill_nan_value(img_db)
 
     filtered_img = cv2.ximgproc.guidedFilter(
-        guide=img_db_filled, src=img_filled, radius=radius, eps=eps, dDepth=ddepth
+        guide=img_db_filled,
+        src=img_filled,
+        radius=radius,
+        eps=eps,
+        dDepth=ddepth,
     )
 
     # Vectorize conditional replacements using masks
