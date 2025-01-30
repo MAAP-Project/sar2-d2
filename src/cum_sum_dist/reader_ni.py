@@ -1701,8 +1701,7 @@ class RTCReader(DataReader):
                     polarizations = pols.copy()
                 elif not np.all(polarizations == pols):
                     raise ValueError(
-                        "Polarizations of multiple RTC files "
-                        "are not consistent."
+                        "Polarizations of multiple RTC files are not consistent."
                     )
 
         for pol_idx, pol in enumerate(polarizations):

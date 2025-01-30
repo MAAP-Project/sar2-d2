@@ -437,11 +437,7 @@ def read_geodata_hdf5(input_rtc):
     """
     Extract data from RTC Geo information and store it as a dictionary
 
-<<<<<<< HEAD
     Parameters
-=======
-    parameters
->>>>>>> 9f50279 (add pre-commit file; re-run Black)
     ----------
     input_rtc: str
         The HDF5 RTC input file path
@@ -482,12 +478,8 @@ def read_geodata_hdf5(input_rtc):
 
 
 def block_param_generator(lines_per_block, data_shape, pad_shape):
-<<<<<<< HEAD
     """
     Generator for block specific parameter class.
-=======
-    """Generator for block specific parameter class.
->>>>>>> 9f50279 (add pre-commit file; re-run Black)
 
     Parameters
     ----------
@@ -523,6 +515,7 @@ def block_param_generator(lines_per_block, data_shape, pad_shape):
         block_length = (
             data_length - start_line if last_block else lines_per_block
         )
+
         # Determine padding along length. Full padding for middle blocks
         # Half padding for start and end blocks
         read_length_pad = pad_length if middle_block else half_pad_length
@@ -616,15 +609,10 @@ class BlockParam:
 
 
 def get_raster_block(raster_path, block_param):
-<<<<<<< HEAD
     """
     Get a block of data from raster.
 
     Raster can be a HDF5 file or a GDAL-friendly raster
-=======
-    """Get a block of data from raster.
-        Raster can be a HDF5 file or a GDAL-friendly raster
->>>>>>> 9f50279 (add pre-commit file; re-run Black)
 
     Parameters
     ----------
