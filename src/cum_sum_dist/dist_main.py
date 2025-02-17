@@ -127,7 +127,7 @@ def get_rtc_stack_block(filename_list, blocksize, block_ind, scale="db"):
                 find,
             ] = 10 * np.log10(target_rtc_image)
         else:
-            target_rtc_image[target_rtc_image < (10 ** -10)] = np.nan
+            target_rtc_image[target_rtc_image < (10**-10)] = np.nan
             target_rtc_set[
                 int(off_y_start) : int(image_rows + off_y_start),
                 int(off_x_start) : int(off_x_start + image_cols),
@@ -300,7 +300,10 @@ def dist_workflow(cfg):
     col_blk_size = 300
 
     # Create reader object
-    reader = reader_ni.RTCReader(row_blk_size=row_blk_size, col_blk_size=col_blk_size,)
+    reader = reader_ni.RTCReader(
+        row_blk_size=row_blk_size,
+        col_blk_size=col_blk_size,
+    )
 
     data_stack_df["geotiff_co"] = ""
     data_stack_df["geotiff_cross"] = ""
@@ -696,11 +699,15 @@ def dist_workflow(cfg):
                     if np.isnan(mean_X_date):
                         continue
 
-                    cumsum_result_diff_single_date = cumsum_result_diff_single_date.where(
-                        cumsum_result_diff_single_date > 0
+                    cumsum_result_diff_single_date = (
+                        cumsum_result_diff_single_date.where(
+                            cumsum_result_diff_single_date > 0
+                        )
                     )
-                    cumsum_result_diff_single_date = cumsum_result_diff_single_date.where(
-                        cumsum_result.max(dim="time") > 0
+                    cumsum_result_diff_single_date = (
+                        cumsum_result_diff_single_date.where(
+                            cumsum_result.max(dim="time") > 0
+                        )
                     )  # Only care for positive values in Smax
                     mean_cumsum_result_date = (
                         cumsum_result_diff_single_date.sel(polarization=pol_single)
@@ -709,8 +716,8 @@ def dist_workflow(cfg):
                     )
 
                     dmask_single = cumsum_result_diff_single_date > dthres
-                    cumsum_result_diff_single_date = cumsum_result_diff_single_date.where(
-                        dmask_single
+                    cumsum_result_diff_single_date = (
+                        cumsum_result_diff_single_date.where(dmask_single)
                     )
                     change_path_name = (
                         f"{output_dir}/cumsum_single_{date_str}_{pol_single}.tif"
@@ -754,8 +761,8 @@ def dist_workflow(cfg):
             cumsum_result_Diff_array_masked = cumsum_result_Diff_array_masked.where(
                 cumsum_result_Diff_array_masked > 0
             )
-            cumsum_result_Diff_array_masked_filled = cumsum_result_Diff_array_masked.fillna(
-                -np.inf
+            cumsum_result_Diff_array_masked_filled = (
+                cumsum_result_Diff_array_masked.fillna(-np.inf)
             )
 
             # Determine where there is at least one non-NaN value along the time dimension

@@ -315,7 +315,7 @@ def get_rtc_stack_block(filename_list, path, blocksize, block_ind, scale="db"):
                 find,
             ] = 10 * np.log10(target_rtc_image)
         else:
-            target_rtc_image[target_rtc_image < (10 ** -10)] = np.nan
+            target_rtc_image[target_rtc_image < (10**-10)] = np.nan
             target_rtc_set[
                 int(off_y_start) : int(image_rows + off_y_start),
                 int(off_x_start) : int(off_x_start + image_cols),
@@ -420,19 +420,19 @@ def read_hdf_latlon(intput_h5_path, path):
 def read_geodata_hdf5(input_rtc):
     """extract data from RTC Geo information and store it as a dictionary
 
-        parameters
-        ----------
-        input_rtc: str
-            The HDF5 RTC input file path
+    parameters
+    ----------
+    input_rtc: str
+        The HDF5 RTC input file path
 
-        Returns
-        -------
-        geotransform: Affine Transformation object
-            Transformation matrix which maps pixel locations in (row, col)
-            coordinates to (x, y) spatial positions.
-        crs: str
-            Coordinate Reference System object in EPSG representation
-        """
+    Returns
+    -------
+    geotransform: Affine Transformation object
+        Transformation matrix which maps pixel locations in (row, col)
+        coordinates to (x, y) spatial positions.
+    crs: str
+        Coordinate Reference System object in EPSG representation
+    """
     frequency_a_path = "/science/LSAR/GCOV/grids/frequencyA"
     geo_name_mapping = {
         "xcoord": f"{frequency_a_path}/xCoordinates",
@@ -461,7 +461,7 @@ def read_geodata_hdf5(input_rtc):
 
 
 def block_param_generator(lines_per_block, data_shape, pad_shape):
-    """ Generator for block specific parameter class.
+    """Generator for block specific parameter class.
 
     Parameters
     ----------
@@ -586,7 +586,7 @@ class BlockParam:
 
 
 def get_raster_block(raster_path, block_param):
-    """ Get a block of data from raster.
+    """Get a block of data from raster.
         Raster can be a HDF5 file or a GDAL-friendly raster
 
     Parameters

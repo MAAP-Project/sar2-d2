@@ -83,16 +83,16 @@ class Logger(object):
 
 def create_logger(log_file, full_log_formatting=None):
     """Create logger object for a log file
-       Parameters
-       ----------
-       log_file: str
-              Log file
-       full_log_formatting : bool
-              Flag to enable full formatting of logged messages
-       Returns
-       -------
-       logger : logging.Logger
-              Logger object
+    Parameters
+    ----------
+    log_file: str
+           Log file
+    full_log_formatting : bool
+           Flag to enable full formatting of logged messages
+    Returns
+    -------
+    logger : logging.Logger
+           Logger object
     """
     # create logger
     logger = logging.getLogger("dswx_sar")

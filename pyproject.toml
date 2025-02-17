@@ -1,7 +1,7 @@
 [project]
 authors = [
     { name = "Sam Niemoeller", email = "samantha.c.niemoeller@jpl.nasa.gov" },
-    { name = "Jungkyo Jung", "jungkyo.jung@jpl.nasa.gov" },
+    { name = "Jungkyo Jung", email = "jungkyo.jung@jpl.nasa.gov" },
     { name = "Chuck Daniels", email = "chuck@developmentseed.org" },
 ]
 dependencies = []

@@ -583,7 +583,7 @@ class RunConfig:
         return self.groups.product_group.scratch_path
 
     def as_dict(self):
-        """ Convert self to dict for write to YAML/JSON
+        """Convert self to dict for write to YAML/JSON
         Unable to dataclasses.asdict() because isce3 objects can not be pickled
         """
         self_as_dict = {}

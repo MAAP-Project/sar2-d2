@@ -709,7 +709,9 @@ def compute_mosaic_array(
                     i_band,
                     offset_imgy : offset_imgy + length,
                     offset_imgx : offset_imgx + width,
-                ] += (arr_rtc * arr_nlooks)
+                ] += (
+                    arr_rtc * arr_nlooks
+                )
 
                 if path_nlooks is not None:
                     arr_denominator[
@@ -1000,7 +1002,6 @@ class RTCReader(DataReader):
         resamp_out_res: float,
         resamp_required: bool,
     ):
-
         """Read data from input HDF5s in blocks and generate mosaicked output
            Geotiff
 
@@ -1016,7 +1017,7 @@ class RTCReader(DataReader):
         mosaic_prefix: str
             Mosaicked output file name prefix
         resamp_required: bool
-            Indicates whether resampling (downsampling) needs to be performed 
+            Indicates whether resampling (downsampling) needs to be performed
             on input RTC product in Geotiff.
         resamp_method: str
             Set GDAL.Warp() resampling algorithms based on its built-in options
@@ -1041,7 +1042,11 @@ class RTCReader(DataReader):
         # existing functions to reproject data and create mosaicked output
         # from intermediate Geotiffs
         (geogrid_in, input_gtiff_list, layover_gtiff_list) = self.write_rtc_geotiff(
-            input_list, scratch_dir, epsg_array, data_path, layover_path,
+            input_list,
+            scratch_dir,
+            epsg_array,
+            data_path,
+            layover_path,
         )
 
         # Choose Resampling methods
@@ -1051,7 +1056,10 @@ class RTCReader(DataReader):
                 if len(input_gtiff_list) > 0:
                     for idx, input_geotiff in enumerate(input_gtiff_list):
                         self.multi_look_average(
-                            input_geotiff, scratch_dir, resamp_out_res, geogrid_in,
+                            input_geotiff,
+                            scratch_dir,
+                            resamp_out_res,
+                            geogrid_in,
                         )
             else:
                 # Apply resampling using GDAL.Warp() based on
@@ -1105,7 +1113,7 @@ class RTCReader(DataReader):
         data_path: list,
         layover_path: list,
     ):
-        """ Create intermediate Geotiffs from a list of input RTCs
+        """Create intermediate Geotiffs from a list of input RTCs
 
         Parameters
         ----------
@@ -1278,7 +1286,7 @@ class RTCReader(DataReader):
         mosaic_prefix: str,
         layover_exist: bool,
     ):
-        """ Create mosaicked output Geotiff from a list of input RTCs
+        """Create mosaicked output Geotiff from a list of input RTCs
 
         Parameters
         ----------
@@ -1403,7 +1411,7 @@ class RTCReader(DataReader):
         output_res: float,
         geogrid_in: DSWXGeogrid,
     ):
-        """Apply upsampling and multi-look pixel averaging on input geotfif 
+        """Apply upsampling and multi-look pixel averaging on input geotfif
         to obtain Geotiff with desired output resolution
 
         Parameters
@@ -1443,7 +1451,10 @@ class RTCReader(DataReader):
             # Perform upsampling to 10 meter resolution
             # Compute upsampled data output bounds
             upsamp_bounds = _calculate_output_bounds(
-                geotransform_input, input_width, input_length, interm_upsamp_res,
+                geotransform_input,
+                input_width,
+                input_length,
+                interm_upsamp_res,
             )
 
             # Perform GDAL.warp() in memory for upsampled data
@@ -1463,22 +1474,34 @@ class RTCReader(DataReader):
             # Aggregate pixel values in a image to lower resolution to achieve
             # multi-looking effect
             multi_look_output = _aggregate_10m_to_30m_conv(
-                data_upsamp, downsamp_ratio, normalized_flag,
+                data_upsamp,
+                downsamp_ratio,
+                normalized_flag,
             )
 
             # Write multi-look averaged data to output geotiff
             self.write_array_to_geotiff(
-                ds_upsamp, multi_look_output, upsamp_bounds, output_res, output_geotiff,
+                ds_upsamp,
+                multi_look_output,
+                upsamp_bounds,
+                output_res,
+                output_geotiff,
             )
         elif input_res_x == 10:
             # Directly average 10m resolution input to 30m resolution output
             ds_array = ds_input.GetRasterBand(1).ReadAsArray()
             multi_look_output = _aggregate_10m_to_30m_conv(
-                ds_array, downsamp_ratio, normalized_flag,
+                ds_array,
+                downsamp_ratio,
+                normalized_flag,
             )
             # Write to output geotiff
             self.write_array_to_geotiff(
-                ds_input, multi_look_output, upsamp_bounds, output_res, output_geotiff,
+                ds_input,
+                multi_look_output,
+                upsamp_bounds,
+                output_res,
+                output_geotiff,
             )
         else:
             raise ValueError(
@@ -1490,7 +1513,12 @@ class RTCReader(DataReader):
         os.replace(output_geotiff, input_geotiff)
 
     def write_array_to_geotiff(
-        self, ds_input, output_data, output_bounds, output_res, output_geotiff,
+        self,
+        ds_input,
+        output_data,
+        output_bounds,
+        output_res,
+        output_geotiff,
     ):
         """Create output geotiff using gdal.CreateCopy()
 
@@ -1938,7 +1966,10 @@ def run(cfg):
     col_blk_size = mosaic_cfg.read_col_blk_size
 
     # Create reader object
-    reader = RTCReader(row_blk_size=row_blk_size, col_blk_size=col_blk_size,)
+    reader = RTCReader(
+        row_blk_size=row_blk_size,
+        col_blk_size=col_blk_size,
+    )
 
     # Mosaic input RTC into output Geotiff
     reader.process_rtc_hdf5(
