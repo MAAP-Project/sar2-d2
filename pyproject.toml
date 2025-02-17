@@ -1,7 +1,7 @@
 [project]
 authors = [
     { name = "Sam Niemoeller", email = "samantha.c.niemoeller@jpl.nasa.gov" },
-    { name = "Jungkyo Jung" },
+    { name = "Jungkyo Jung", "jungkyo.jung@jpl.nasa.gov" },
     { name = "Chuck Daniels", email = "chuck@developmentseed.org" },
 ]
 dependencies = []
@@ -9,6 +9,10 @@ description = "SAR2-D2: Synthetic Aperture Radar Remote Disturbance Detector"
 name = "sar2-d2"
 requires-python = ">= 3.12"
 version = "0.1.0"
+
+[tool.black]
+preview = true
+line-length = 88
 
 [tool.mypy]
 files = ["sar2_d2", "test"]
