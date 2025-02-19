@@ -12,9 +12,10 @@ import yamale
 from ruamel.yaml import YAML
 
 import cum_sum_dist
+
 # from dist import check_gdal_raster_s3
 
-logger = logging.getLogger('sar2-d2')
+logger = logging.getLogger("sar2-d2")
 
 WORKFLOW_SCRIPTS_DIR = os.path.dirname(cum_sum_dist.__file__)
 
@@ -22,51 +23,52 @@ WORKFLOW_SCRIPTS_DIR = os.path.dirname(cum_sum_dist.__file__)
 # NOTE: DO NOT CHANGE THE ORDER of the items in the dictionary below.
 # TODO: Need to update dictionary for NISAR
 DSWX_NI_POL_DICT = {
-    'CO_POL': ['HH', 'VV'],
-    'CROSS_POL': ['HV', 'VH'],
-    'MIX_DUAL_POL': ['HH', 'HV', 'VV', 'VH'],
-    'MIX_DUAL_H_SINGLE_V_POL': ['HH', 'HV', 'VV'],
-    'MIX_DUAL_V_SINGLE_H_POL': ['VV', 'VH', 'HH'],
-    'MIX_SINGLE_POL': ['HH', 'VV'],
-    'DV_POL': ['VV', 'VH'],
-    'SV_POL': ['VV'],
-    'DH_POL': ['HH', 'HV'],
-    'SH_POL': ['HH'],
-    }
+    "CO_POL": ["HH", "VV"],
+    "CROSS_POL": ["HV", "VH"],
+    "MIX_DUAL_POL": ["HH", "HV", "VV", "VH"],
+    "MIX_DUAL_H_SINGLE_V_POL": ["HH", "HV", "VV"],
+    "MIX_DUAL_V_SINGLE_H_POL": ["VV", "VH", "HH"],
+    "MIX_SINGLE_POL": ["HH", "VV"],
+    "DV_POL": ["VV", "VH"],
+    "SV_POL": ["VV"],
+    "DH_POL": ["HH", "HV"],
+    "SH_POL": ["HH"],
+}
 
 # 2nd dictionary is for single frame only
 DSWX_NI_SINGLE_FRAME_POL_DICT = {
-    'SH_POL': ['HH'],
-    'SV_POL': ['VV'],
-    'DH_POL': ['HH', 'HV'],
-    'DV_POL': ['VV', 'VH'],
-    'CO_POL': ['HH', 'VV'],
-    'CROSS_POL': ['HV', 'VH'],
-    'QP_POL': ['HH', 'VV', 'HV', 'VH'],
-    'DV_SH_POL': ['VV', 'VH', 'HH'],
-    'DH_SV_POL': ['HH', 'HV', 'VV'],
-    }
+    "SH_POL": ["HH"],
+    "SV_POL": ["VV"],
+    "DH_POL": ["HH", "HV"],
+    "DV_POL": ["VV", "VH"],
+    "CO_POL": ["HH", "VV"],
+    "CROSS_POL": ["HV", "VH"],
+    "QP_POL": ["HH", "VV", "HV", "VH"],
+    "DV_SH_POL": ["VV", "VH", "HH"],
+    "DH_SV_POL": ["HH", "HV", "VV"],
+}
+
 
 def _get_parser():
     parser = argparse.ArgumentParser(
-        description='',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-        )
+        description="", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
     # Input
-    parser.add_argument('input_yaml',
-                        type=str,
-                        nargs='+',
-                        help='Input YAML run configuration file')
+    parser.add_argument(
+        "input_yaml", type=str, nargs="+", help="Input YAML run configuration file"
+    )
 
-    parser.add_argument('--debug_mode', action='store_true', default=False,
-                        help='Print figures. Off/False by default.')
+    parser.add_argument(
+        "--debug_mode",
+        action="store_true",
+        default=False,
+        help="Print figures. Off/False by default.",
+    )
 
-    parser.add_argument('--log',
-                        '--log-file',
-                        dest='log_file',
-                        type=str,
-                        help='Log file')
+    parser.add_argument(
+        "--log", "--log-file", dest="log_file", type=str, help="Log file"
+    )
 
     return parser
 
@@ -111,20 +113,22 @@ def load_validate_yaml(yaml_path: str, workflow_name: str) -> dict:
         # Load schema corresponding to 'workflow_name' and to validate against
         schema_name = workflow_name
         schema = yamale.make_schema(
-            f'{WORKFLOW_SCRIPTS_DIR}/schemas/{schema_name}.yaml',
-            parser='ruamel')
+            f"{WORKFLOW_SCRIPTS_DIR}/schemas/{schema_name}.yaml", parser="ruamel"
+        )
     except:
-        err_str = f'unable to load schema for workflow {workflow_name}.'
+        err_str = f"unable to load schema for workflow {workflow_name}."
         logger.error(err_str)
         raise ValueError(err_str)
 
     # load yaml file or string from command line
     if os.path.isfile(yaml_path):
         try:
-            data = yamale.make_data(yaml_path, parser='ruamel')
+            data = yamale.make_data(yaml_path, parser="ruamel")
         except yamale.YamaleError as yamale_err:
-            err_str = f'Yamale unable to load {workflow_name} ' \
-                      'runconfig yaml {yaml_path} for validation.'
+            err_str = (
+                f"Yamale unable to load {workflow_name} "
+                "runconfig yaml {yaml_path} for validation."
+            )
             logger.error(err_str)
             raise yamale.YamaleError(err_str) from yamale_err
     else:
@@ -134,25 +138,24 @@ def load_validate_yaml(yaml_path: str, workflow_name: str) -> dict:
     try:
         yamale.validate(schema, data)
     except yamale.YamaleError as yamale_err:
-        err_str = f'Validation fail for {workflow_name} ' \
-                  f'runconfig yaml {yaml_path}.'
+        err_str = f"Validation fail for {workflow_name} " f"runconfig yaml {yaml_path}."
         logger.error(err_str)
         raise yamale.YamaleError(err_str) from yamale_err
 
     # load default runconfig
-    parser = YAML(typ='safe')
-    default_cfg_path = f'{WORKFLOW_SCRIPTS_DIR}/defaults/{schema_name}.yaml'
-    with open(default_cfg_path, 'r') as f_default:
+    parser = YAML(typ="safe")
+    default_cfg_path = f"{WORKFLOW_SCRIPTS_DIR}/defaults/{schema_name}.yaml"
+    with open(default_cfg_path, "r") as f_default:
         default_cfg = parser.load(f_default)
 
-    with open(yaml_path, 'r') as f_yaml:
+    with open(yaml_path, "r") as f_yaml:
         user_cfg = parser.load(f_yaml)
 
     # Copy user-supplied configuration options into default runconfig
     _deep_update(default_cfg, user_cfg)
     # Validate YAML values under groups dict
-    if 'groups' in default_cfg['runconfig'].keys():
-        validate_group_dict(default_cfg['runconfig']['groups'])
+    if "groups" in default_cfg["runconfig"].keys():
+        validate_group_dict(default_cfg["runconfig"]["groups"])
 
     return default_cfg
 
@@ -165,7 +168,7 @@ def check_write_dir(dst_path: str):
         File path to directory for which to check writing permission
     """
     if not dst_path:
-        dst_path = '.'
+        dst_path = "."
 
     # check if scratch path exists
     dst_path_ok = os.path.isdir(dst_path)
@@ -193,12 +196,12 @@ def check_file_path(file_path: str) -> None:
     file_path : str
         Path to file to be checked
     """
-    if file_path.startswith('/vsis3/'):
+    if file_path.startswith("/vsis3/"):
         check_gdal_raster_s3(file_path, raise_error=True)
 
     else:
         if not os.path.exists(file_path):
-            err_str = f'{file_path} not found'
+            err_str = f"{file_path} not found"
             logger.error(err_str)
             raise FileNotFoundError(err_str)
 
@@ -208,21 +211,21 @@ def get_pol_rtc_hdf5(input_rtc, freq_group):
     # basename separates file name from directory in path string
     # splitext removes the file extension from basename
     # split('_')[-1] gets polarization
-    path_pol = f'/science/LSAR/GCOV/grids/frequency{freq_group}/listOfPolarizations'
+    path_pol = f"/science/LSAR/GCOV/grids/frequency{freq_group}/listOfPolarizations"
 
     with h5py.File(input_rtc) as src:
         pols = src[path_pol][()]
-        pols = [pol.decode('utf-8') for pol in pols]
+        pols = [pol.decode("utf-8") for pol in pols]
 
     return pols
 
 
 def get_freq_rtc_hdf5(input_rtc):
-    path_freq = f'/science/LSAR/identification/listOfFrequencies'
+    path_freq = f"/science/LSAR/identification/listOfFrequencies"
 
     with h5py.File(input_rtc) as src_h5:
         freq_group_list = src_h5[path_freq][()]
-        freq = [freq_group.decode('utf-8') for freq_group in freq_group_list]
+        freq = [freq_group.decode("utf-8") for freq_group in freq_group_list]
 
     return freq
 
@@ -251,7 +254,7 @@ def check_rtc_frequency(input_h5_list):
         freq_list = [get_freq_rtc_hdf5(input_h5_list[0])]
         return True, freq_list  # If only one file, frequencies are trivially equal
 
-    freq_list = np.empty(num_input_files , dtype=object)
+    freq_list = np.empty(num_input_files, dtype=object)
     flag_pol_equal = True
 
     for input_idx, input_h5 in enumerate(input_h5_list):
@@ -270,7 +273,7 @@ def check_rtc_frequency(input_h5_list):
 
 def read_rtc_polarization(input_h5_list, freq_list):
     num_input_files = len(input_h5_list)
-    pol_list = np.empty((num_input_files, 2) , dtype=object)
+    pol_list = np.empty((num_input_files, 2), dtype=object)
 
     for input_idx, input_h5 in enumerate(input_h5_list):
         # Check to see if frequency group of an input file is empty
@@ -377,7 +380,7 @@ def _find_polarization_from_data_dirs(input_h5_list):
 
     # if nothing found raise error
     if not extracted_strings:
-        err_str = 'Failed to find polarizations from RTC files.'
+        err_str = "Failed to find polarizations from RTC files."
         raise ValueError(err_str)
 
     # return only unique polarizations
@@ -409,12 +412,12 @@ def check_polarizations(pol_list, input_dir_list, DSWX_NI_POL_DICT):
     sorted_pol_list : list
         List of all polarizations sorted, prioritizing co-polarizations.
     """
-    if ('dual-pol' in pol_list) or ('auto' in pol_list):
-        proc_pol_list = ['VV', 'VH', 'HH', 'HV']
-    elif 'co-pol' in pol_list:
-        proc_pol_list = ['VV', 'HH']
-    elif 'cross-pol' in pol_list:
-        proc_pol_list = ['VH', 'HV']
+    if ("dual-pol" in pol_list) or ("auto" in pol_list):
+        proc_pol_list = ["VV", "VH", "HH", "HV"]
+    elif "co-pol" in pol_list:
+        proc_pol_list = ["VV", "HH"]
+    elif "cross-pol" in pol_list:
+        proc_pol_list = ["VH", "HV"]
     else:
         proc_pol_list = pol_list
 
@@ -425,12 +428,12 @@ def check_polarizations(pol_list, input_dir_list, DSWX_NI_POL_DICT):
     proc_pol_list = list(set(proc_pol_list) & set(found_pol))
 
     if not proc_pol_list:
-        err_str = f'No RTC files found with requested polarizations {pol_list}'
+        err_str = f"No RTC files found with requested polarizations {pol_list}"
         logger.error(err_str)
         raise FileNotFoundError(err_str)
 
     def custom_sort(pol):
-        if pol in DSWX_NI_POL_DICT['CO_POL']:
+        if pol in DSWX_NI_POL_DICT["CO_POL"]:
             return (0, pol)  # Sort 'VV' and 'HH' before others
         return (1, pol)
 
@@ -439,7 +442,7 @@ def check_polarizations(pol_list, input_dir_list, DSWX_NI_POL_DICT):
     co_pol_list = []
     cross_pol_list = []
     for pol in sorted_pol_list:
-        if pol in DSWX_NI_POL_DICT['CO_POL']:
+        if pol in DSWX_NI_POL_DICT["CO_POL"]:
             co_pol_list.append(pol)
         else:
             cross_pol_list.append(pol)
@@ -454,7 +457,7 @@ def check_polarizations(pol_list, input_dir_list, DSWX_NI_POL_DICT):
             pol_mode = pol_mode_name
 
     if pol_mode is None:
-        err_msg = 'unable to identify polarization mode.'
+        err_msg = "unable to identify polarization mode."
         logger.warning(err_msg)
     return co_pol_list, cross_pol_list, sorted_pol_list, pol_mode
 
@@ -468,9 +471,9 @@ def validate_group_dict(group_cfg: dict) -> None:
     """
     # Check 'product_group' section of runconfig.
     # Check that directories herein have writing permissions
-    product_group = group_cfg['product_path_group']
-    check_write_dir(product_group['sas_output_path'])
-    check_write_dir(product_group['scratch_path'])
+    product_group = group_cfg["product_path_group"]
+    check_write_dir(product_group["sas_output_path"])
+    check_write_dir(product_group["scratch_path"])
 
 
 @singledispatch
@@ -480,8 +483,7 @@ def wrap_namespace(ob):
 
 @wrap_namespace.register(dict)
 def _wrap_dict(ob):
-    return SimpleNamespace(**{key: wrap_namespace(val)
-                              for key, val in ob.items()})
+    return SimpleNamespace(**{key: wrap_namespace(val) for key, val in ob.items()})
 
 
 @wrap_namespace.register(list)
@@ -502,7 +504,8 @@ def unwrap_to_dict(sns: SimpleNamespace) -> dict:
 
 @dataclass
 class RunConfig:
-    '''dataclass containing DSWX runconfig'''
+    """dataclass containing DSWX runconfig"""
+
     # workflow name
     name: str
     # runconfig options converted from dict
@@ -522,32 +525,34 @@ class RunConfig:
         """
         cfg = load_validate_yaml(yaml_path, workflow_name)
 
-        groups_cfg = cfg['runconfig']['groups']
+        groups_cfg = cfg["runconfig"]["groups"]
 
         # Convert runconfig dict to SimpleNamespace
         sns = wrap_namespace(groups_cfg)
         product = sns.primary_executable.product_type
-        sensor = product.split('_')[-1]
+        sensor = product.split("_")[-1]
 
-        input_dir_list = \
-            cfg['runconfig']['groups']['input_file_group']['input_file_path']
+        input_dir_list = cfg["runconfig"]["groups"]["input_file_group"][
+            "input_file_path"
+        ]
 
         # Determine NISAR input RTC mode of operation
         (
-            flag_freq_equal, 
-            flag_pol_freq_a_equal, 
-            flag_pol_freq_b_equal, 
-            nisar_uni_mode
+            flag_freq_equal,
+            flag_pol_freq_a_equal,
+            flag_pol_freq_b_equal,
+            nisar_uni_mode,
         ) = verify_nisar_mode(input_dir_list)
 
         log_file = sns.log_file
         if args.log_file is not None:
             logger.warning(
                 f'command line log file "{args.log_file}"'
-                f' has precedence over runconfig log file "{log_file}"')
+                f' has precedence over runconfig log file "{log_file}"'
+            )
             sns.log_file = args.log_file
 
-        return cls(cfg['runconfig']['name'], sns, yaml_path)
+        return cls(cfg["runconfig"]["name"], sns, yaml_path)
 
     @property
     def input_file_path(self):
@@ -578,12 +583,12 @@ class RunConfig:
         return self.groups.product_group.scratch_path
 
     def as_dict(self):
-        ''' Convert self to dict for write to YAML/JSON
+        """Convert self to dict for write to YAML/JSON
         Unable to dataclasses.asdict() because isce3 objects can not be pickled
-        '''
+        """
         self_as_dict = {}
         for key, val in self.__dict__.items():
-            if key == 'groups':
+            if key == "groups":
                 val = unwrap_to_dict(val)
 
             self_as_dict[key] = val
@@ -591,5 +596,5 @@ class RunConfig:
 
     def to_yaml(self):
         self_as_dict = self.as_dict()
-        yaml = YAML(typ='safe')
+        yaml = YAML(typ="safe")
         yaml.dump(self_as_dict, sys.stdout, indent=4)
