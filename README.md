@@ -1,5 +1,66 @@
 # SAR2-D2: Synthetic Aperture Radar Remote Disturbance Detector
 
+# Minimum PreRequisites:
+See `environment.yaml` for required packages.
+
+# Operating Instructions:
+
+## Installation
+
+Step 1) Install the conda package manager.
+
+Step 2) Clone the `sar2-d2` repo and `cd` into the top level directory.
+```
+git clone git@github.com:MAAP-Project/sar2-d2.git
+cd sar2-d2
+```
+
+Step 3) Create a conda environment with the correct packages for QA.
+
+By creating a new environment using the `environment.yaml` file, the required 
+packages and their versions will all be resolved by conda from the conda-forge 
+channel, and thus remain consistent with each other. (Mixing package managers 
+has led to import errors during testing.) The `environment.yaml` defaults to 
+naming the new conda environment `sar2-d2`.
+```
+conda env create -f environment.yml
+conda activate sar2-d2  # activate the new environment
+```
+
+Step 4) Install SAR2-D2
+
+Coming soon!
+
+
+## Pre-Commit file
+SAR2-D2 developers must setup a pre-commit workflow to ensure consistent code style.
+Configuration options are found in the `pyproject.toml` and `.pre-commit-config.yaml` files.
+
+Install pre-commit and check if it was correctly installed:
+
+```
+conda install -c conda-forge pre-commit
+pre-commit help
+```
+
+Install and set up the git hook scripts:
+
+```
+pre-commit install  # stdout: pre-commit installed at .git/hooks/pre-commit
+```
+
+Now pre-commit will run automatically on git commit.
+
+Some useful commands:
+
+```
+pre-commit run --all-files  # run on all files (not just files in commit)
+git commit --no-verify -m "message"  # skip pre-commit entirely
+SKIP=flake8,black git commit -m "foo"  # temporarily disable flake8 and black
+```
+
+# Instrutions specific to MAAP
+
 ## Running the NASA algorithm locally
 
 If you need to create a new environment, or update an existing one, with
