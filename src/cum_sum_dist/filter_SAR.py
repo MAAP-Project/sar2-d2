@@ -2,9 +2,7 @@ import cv2
 import numpy as np
 from scipy import ndimage, signal
 from scipy.interpolate import griddata
-from skimage.restoration import denoise_tv_chambolle, denoise_tv_bregman
-
-from dswx_sar.dswx_sar_util import Constants
+from skimage.restoration import denoise_tv_bregman, denoise_tv_chambolle
 
 K_DEFAULT = 1.0
 CU_DEFAULT = 0.523
@@ -62,7 +60,7 @@ def compute_window_mean_std(arr, winsize):
 
     # The negative number in sqrt is replaced
     # with the negligibly small number to avoid numpy warning message.
-    var = np.where(var < 0, Constants.negligible_value, var)
+    var = np.where(var < 0, 1e-7, var)
     std = var**0.5
 
     return mean, std
@@ -96,14 +94,17 @@ def weightingarr(im, winsize, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT):
     w_t_arr = np.zeros(im.shape)
     w_t_arr[ci <= cu] = 1
     w_t_arr[(ci > cu) & (ci < cmax)] = np.exp(
-        (-k * (ci[(ci > cu) & (ci < cmax)] - cu)) / (cmax - ci[(ci > cu) & (ci < cmax)])
+        (-k * (ci[(ci > cu) & (ci < cmax)] - cu))
+        / (cmax - ci[(ci > cu) & (ci < cmax)])
     )
     w_t_arr[ci >= cmax] = 0
 
     return w_t_arr, window_mean, window_std
 
 
-def lee_enhanced_filter(img, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT, **kwargs):
+def lee_enhanced_filter(
+    img, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT, **kwargs
+):
     """
     Enhanced Lee filter for SAR image
 
@@ -237,7 +238,11 @@ def guided_filter(img, **kwargs):
     img_db_filled = fill_nan_value(img_db)
 
     filtered_img = cv2.ximgproc.guidedFilter(
-        guide=img_db_filled, src=img_filled, radius=radius, eps=eps, dDepth=ddepth
+        guide=img_db_filled,
+        src=img_filled,
+        radius=radius,
+        eps=eps,
+        dDepth=ddepth,
     )
 
     # Vectorize conditional replacements using masks

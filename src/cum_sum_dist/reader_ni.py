@@ -57,7 +57,8 @@ def requires_reprojection(
     # Compare geotransforms of RTC image and nlooks (if provided)
     if (
         nlooks_image is not None
-        and raster_rtc_image.GetGeoTransform() != raster_nlooks.GetGeoTransform()
+        and raster_rtc_image.GetGeoTransform()
+        != raster_nlooks.GetGeoTransform()
     ):
         error_str = (
             f"ERROR geolocations of {raster_rtc_image} and"
@@ -109,11 +110,17 @@ def requires_reprojection(
                 return flag_requires_reprojection
 
         # check the coordinates
-        if abs((x0 - geogrid_mosaic.start_x) % geogrid_mosaic.spacing_x) > maxerr_coord:
+        if (
+            abs((x0 - geogrid_mosaic.start_x) % geogrid_mosaic.spacing_x)
+            > maxerr_coord
+        ):
             flag_requires_reprojection = True
             return flag_requires_reprojection
 
-        if abs((y0 - geogrid_mosaic.start_y) % geogrid_mosaic.spacing_y) > maxerr_coord:
+        if (
+            abs((y0 - geogrid_mosaic.start_y) % geogrid_mosaic.spacing_y)
+            > maxerr_coord
+        ):
             flag_requires_reprojection = True
             return flag_requires_reprojection
 
@@ -155,7 +162,9 @@ def get_meta_from_tif(tif_file_name):
     return meta_dict
 
 
-def convert_rounded_coordinates(corners, from_epsg, to_epsg, x_snap=30, y_snap=30):
+def convert_rounded_coordinates(
+    corners, from_epsg, to_epsg, x_snap=30, y_snap=30
+):
     """
     Transform and round coordinates from one EPSG coordinate system to another.
 
@@ -203,7 +212,11 @@ def convert_rounded_coordinates(corners, from_epsg, to_epsg, x_snap=30, y_snap=3
 
 
 def change_epsg_tif(
-    input_tif, output_tif, epsg_output, resample_method="nearest", output_nodata="NaN"
+    input_tif,
+    output_tif,
+    epsg_output,
+    resample_method="nearest",
+    output_nodata="NaN",
 ):
     """Resample the input geotiff image to new EPSG code.
 
@@ -420,7 +433,9 @@ def mosaic_single_output_file(
         mosaic_filename, width, length, num_bands, datatype_mosaic
     )
 
-    raster_out.SetGeoTransform((xmin_mosaic, posting_x, 0, ymax_mosaic, 0, posting_y))
+    raster_out.SetGeoTransform(
+        (xmin_mosaic, posting_x, 0, ymax_mosaic, 0, posting_y)
+    )
     raster_out.SetProjection(wkt_projection)
 
     for i_band in range(num_bands):
@@ -525,10 +540,12 @@ def compute_mosaic_array(
         xmin_mosaic = list_geo_transform[:, 0].min()
         ymax_mosaic = list_geo_transform[:, 3].max()
         xmax_mosaic = (
-            list_geo_transform[:, 0] + list_geo_transform[:, 1] * list_dimension[:, 1]
+            list_geo_transform[:, 0]
+            + list_geo_transform[:, 1] * list_dimension[:, 1]
         ).max()
         ymin_mosaic = (
-            list_geo_transform[:, 3] + list_geo_transform[:, 5] * list_dimension[:, 0]
+            list_geo_transform[:, 3]
+            + list_geo_transform[:, 5] * list_dimension[:, 0]
         ).min()
 
         dim_mosaic = (
@@ -570,7 +587,9 @@ def compute_mosaic_array(
         print("        number of bands: {num_bands}")
 
     if mosaic_mode.lower() == "average":
-        arr_numerator = np.zeros((num_bands, dim_mosaic[0], dim_mosaic[1]), dtype=float)
+        arr_numerator = np.zeros(
+            (num_bands, dim_mosaic[0], dim_mosaic[1]), dtype=float
+        )
         arr_denominator = np.zeros(dim_mosaic, dtype=float)
     else:
         arr_numerator = np.full(
@@ -587,7 +606,8 @@ def compute_mosaic_array(
 
         if verbose:
             print(
-                f"    mosaicking ({i+1}/{num_raster}): " f"{os.path.basename(path_rtc)}"
+                f"    mosaicking ({i+1}/{num_raster}): "
+                f"{os.path.basename(path_rtc)}"
             )
         if geogrid_in is not None and requires_reprojection(
             geogrid_in, path_rtc, path_nlooks
@@ -599,7 +619,10 @@ def compute_mosaic_array(
                     dir=scratch_dir, suffix=".tif"
                 ).name
 
-                print("        reprojecting image to temporary file:", relocated_file)
+                print(
+                    "        reprojecting image to temporary file:",
+                    relocated_file,
+                )
 
             if temp_files_list is not None:
                 temp_files_list.append(relocated_file)
@@ -615,8 +638,10 @@ def compute_mosaic_array(
                 dstSRS=wkt_projection,
                 outputBounds=[
                     geogrid_in.start_x,
-                    geogrid_in.start_y + geogrid_in.length * geogrid_in.spacing_y,
-                    geogrid_in.start_x + geogrid_in.width * geogrid_in.spacing_x,
+                    geogrid_in.start_y
+                    + geogrid_in.length * geogrid_in.spacing_y,
+                    geogrid_in.start_x
+                    + geogrid_in.width * geogrid_in.spacing_x,
                     geogrid_in.start_y,
                 ],
                 multithread=True,
@@ -635,7 +660,8 @@ def compute_mosaic_array(
                 ).name
 
                 print(
-                    "        reprojecting number of looks layer to temporary" " file:",
+                    "        reprojecting number of looks layer to temporary"
+                    " file:",
                     relocated_file_nlooks,
                 )
 
@@ -649,8 +675,10 @@ def compute_mosaic_array(
                     dstSRS=wkt_projection,
                     outputBounds=[
                         geogrid_in.start_x,
-                        geogrid_in.start_y + geogrid_in.length * geogrid_in.spacing_y,
-                        geogrid_in.start_x + geogrid_in.width * geogrid_in.spacing_x,
+                        geogrid_in.start_y
+                        + geogrid_in.length * geogrid_in.spacing_y,
+                        geogrid_in.start_x
+                        + geogrid_in.width * geogrid_in.spacing_x,
                         geogrid_in.start_y,
                     ],
                     multithread=True,
@@ -676,7 +704,10 @@ def compute_mosaic_array(
             )
 
         if verbose:
-            print("        image offset (x, y): " f"({offset_imgx}, {offset_imgy})")
+            print(
+                "        image offset (x, y): "
+                f"({offset_imgx}, {offset_imgy})"
+            )
 
         if path_nlooks is not None:
             nlooks_gdal_ds = gdal.Open(path_nlooks, gdal.GA_ReadOnly)
@@ -748,7 +779,8 @@ def compute_mosaic_array(
                     offset_imgx : offset_imgx + width,
                 ]
                 ind = np.logical_or(
-                    np.isnan(arr_distance_temp), arr_new_distance <= arr_distance_temp
+                    np.isnan(arr_distance_temp),
+                    arr_new_distance <= arr_distance_temp,
                 )
 
                 arr_distance_temp[ind] = arr_new_distance[ind]
@@ -913,7 +945,15 @@ class DSWXGeogrid:
         tif_gdal = None
         del tif_gdal
         return cls(
-            start_x, start_y, end_x, end_y, spacing_x, spacing_y, length, width, epsg
+            start_x,
+            start_y,
+            end_x,
+            end_y,
+            spacing_x,
+            spacing_y,
+            length,
+            width,
+            epsg,
         )
 
     def update_geogrid(self, geotiff_path):
@@ -929,7 +969,9 @@ class DSWXGeogrid:
                 "EPSG codes of the existing and " "new geogrids do not match."
             )
         self.start_x = min(
-            filter(lambda x: not np.isnan(x), [self.start_x, new_geogrid.start_x])
+            filter(
+                lambda x: not np.isnan(x), [self.start_x, new_geogrid.start_x]
+            )
         )
         self.end_x = max(
             filter(lambda x: not np.isnan(x), [self.end_x, new_geogrid.end_x])
@@ -937,17 +979,27 @@ class DSWXGeogrid:
 
         if self.spacing_y > 0 or np.isnan(self.spacing_y):
             self.end_y = max(
-                filter(lambda x: not np.isnan(x), [self.end_y, new_geogrid.end_y])
+                filter(
+                    lambda x: not np.isnan(x), [self.end_y, new_geogrid.end_y]
+                )
             )
             self.start_y = min(
-                filter(lambda x: not np.isnan(x), [self.start_y, new_geogrid.start_y])
+                filter(
+                    lambda x: not np.isnan(x),
+                    [self.start_y, new_geogrid.start_y],
+                )
             )
         else:
             self.start_y = max(
-                filter(lambda x: not np.isnan(x), [self.start_y, new_geogrid.start_y])
+                filter(
+                    lambda x: not np.isnan(x),
+                    [self.start_y, new_geogrid.start_y],
+                )
             )
             self.end_y = min(
-                filter(lambda x: not np.isnan(x), [self.end_y, new_geogrid.end_y])
+                filter(
+                    lambda x: not np.isnan(x), [self.end_y, new_geogrid.end_y]
+                )
             )
 
         self.spacing_x = (
@@ -975,7 +1027,9 @@ class DSWXGeogrid:
         ):
             self.length = int((self.end_y - self.start_y) / self.spacing_y)
 
-        self.epsg = new_geogrid.epsg if not np.isnan(new_geogrid.epsg) else self.epsg
+        self.epsg = (
+            new_geogrid.epsg if not np.isnan(new_geogrid.epsg) else self.epsg
+        )
 
 
 class DataReader(ABC):
@@ -1041,12 +1095,14 @@ class RTCReader(DataReader):
         # Write all RTC HDF5 inputs to intermeidate Geotiff first and re-use
         # existing functions to reproject data and create mosaicked output
         # from intermediate Geotiffs
-        (geogrid_in, input_gtiff_list, layover_gtiff_list) = self.write_rtc_geotiff(
-            input_list,
-            scratch_dir,
-            epsg_array,
-            data_path,
-            layover_path,
+        (geogrid_in, input_gtiff_list, layover_gtiff_list) = (
+            self.write_rtc_geotiff(
+                input_list,
+                scratch_dir,
+                epsg_array,
+                data_path,
+                layover_path,
+            )
         )
 
         # Choose Resampling methods
@@ -1193,8 +1249,12 @@ class RTCReader(DataReader):
             if epsg_array[input_idx] != most_freq_epsg:
                 for idx, dataset_path in enumerate(data_path):
                     data_name = Path(dataset_path).name[:2]
-                    input_gtiff = f"{scratch_dir}/{input_prefix}_{data_name}.tif"
-                    temp_gtiff = f"{scratch_dir}/{input_prefix}_temp_{data_name}.tif"
+                    input_gtiff = (
+                        f"{scratch_dir}/{input_prefix}_{data_name}.tif"
+                    )
+                    temp_gtiff = (
+                        f"{scratch_dir}/{input_prefix}_temp_{data_name}.tif"
+                    )
 
                     # Change EPSG
                     change_epsg_tif(
@@ -1212,7 +1272,9 @@ class RTCReader(DataReader):
             else:
                 for idx, dataset_path in enumerate(data_path):
                     data_name = Path(dataset_path).name[:2]
-                    output_gtiff = f"{scratch_dir}/{input_prefix}_{data_name}.tif"
+                    output_gtiff = (
+                        f"{scratch_dir}/{input_prefix}_{data_name}.tif"
+                    )
 
                     # Update geogrid
                     geogrid_in.update_geogrid(output_gtiff)
@@ -1232,8 +1294,12 @@ class RTCReader(DataReader):
                 break
 
                 output_prefix = self.extract_file_name(input_rtc)
-                output_layover_gtiff = f"{scratch_dir}/{output_prefix}_layover.tif"
-                layover_gtiff_list = np.append(layover_gtiff_list, output_layover_gtiff)
+                output_layover_gtiff = (
+                    f"{scratch_dir}/{output_prefix}_layover.tif"
+                )
+                layover_gtiff_list = np.append(
+                    layover_gtiff_list, output_layover_gtiff
+                )
 
                 num_cols = h5_layover.RasterXSize
                 col_blk_size = self.col_blk_size
@@ -1254,7 +1320,9 @@ class RTCReader(DataReader):
                 # Change EPSG of layOverMask if necessary
                 if epsg_array[input_idx] != most_freq_epsg:
                     input_prefix = self.extract_file_name(input_rtc)
-                    input_layover_gtiff = f"{scratch_dir}/{input_prefix}_layover.tif"
+                    input_layover_gtiff = (
+                        f"{scratch_dir}/{input_prefix}_layover.tif"
+                    )
                     temp_layover_gtiff = (
                         f"{scratch_dir}/{input_prefix}_temp_layover.tif"
                     )
@@ -1319,7 +1387,9 @@ class RTCReader(DataReader):
                 input_gtiff_list = np.append(input_gtiff_list, input_gtiff)
 
             # Mosaic dataset of same polarization into a single Geotiff
-            output_mosaic_gtiff = f"{scratch_dir}/{mosaic_prefix}_{data_name}.tif"
+            output_mosaic_gtiff = (
+                f"{scratch_dir}/{mosaic_prefix}_{data_name}.tif"
+            )
             mosaic_single_output_file(
                 input_gtiff_list,
                 nlooks_list,
@@ -1336,7 +1406,9 @@ class RTCReader(DataReader):
             for input_idx, input_rtc in enumerate(input_list):
                 input_prefix = self.extract_file_name(input_rtc)
                 layover_gtiff = f"{scratch_dir}/{input_prefix}_layover.tif"
-                layover_gtiff_list = np.append(layover_gtiff_list, layover_gtiff)
+                layover_gtiff_list = np.append(
+                    layover_gtiff_list, layover_gtiff
+                )
 
             layover_mosaic_gtiff = f"{scratch_dir}/{mosaic_prefix}_layover.tif"
 
@@ -1379,7 +1451,9 @@ class RTCReader(DataReader):
 
         # Check if the file exists
         if not os.path.exists(input_geotiff):
-            raise FileNotFoundError(f"The file '{input_geotiff}' does not exist.")
+            raise FileNotFoundError(
+                f"The file '{input_geotiff}' does not exist."
+            )
 
         full_path = Path(input_geotiff)
         output_geotiff = f"{full_path.parent}/{full_path.stem}_resamp.tif"
@@ -1437,7 +1511,9 @@ class RTCReader(DataReader):
         input_res_y = np.abs(geotransform_input[5])
 
         if input_res_x != input_res_y:
-            raise ValueError("x and y resolutions of the input must be the same.")
+            raise ValueError(
+                "x and y resolutions of the input must be the same."
+            )
 
         full_path = Path(input_geotiff)
         output_geotiff = f"{full_path.parent}/{full_path.stem}_multi_look.tif"
@@ -1607,21 +1683,26 @@ class RTCReader(DataReader):
             All dataset polarizations listed in the input HDF5 file
         """
 
-        pol_list_path = "/science/LSAR/GCOV/grids/frequencyA/listOfPolarizations"
+        pol_list_path = (
+            "/science/LSAR/GCOV/grids/frequencyA/listOfPolarizations"
+        )
         polarizations = []
         pols_rtc = []
         for input_idx, input_rtc in enumerate(input_list):
             print(input_rtc)
             # Check if the file exists
             if not os.path.exists(input_rtc):
-                raise FileNotFoundError(f"The file '{input_rtc}' does not exist.")
+                raise FileNotFoundError(
+                    f"The file '{input_rtc}' does not exist."
+                )
             with h5py.File(input_rtc, "r") as src_h5:
                 pols = np.sort(src_h5[pol_list_path][()])
                 if len(polarizations) == 0:
                     polarizations = pols.copy()
                 elif not np.all(polarizations == pols):
                     raise ValueError(
-                        "Polarizations of multiple RTC files " "are not consistent."
+                        "Polarizations of multiple RTC files "
+                        "are not consistent."
                     )
 
         for pol_idx, pol in enumerate(polarizations):
@@ -1758,9 +1839,13 @@ class RTCReader(DataReader):
             transform=geotransform,
             compress="DEFLATE",
         ) as dst:
-            for idx_y, slice_row in enumerate(slice_gen(num_rows, row_blk_size)):
+            for idx_y, slice_row in enumerate(
+                slice_gen(num_rows, row_blk_size)
+            ):
                 row_slice_size = slice_row.stop - slice_row.start
-                for idx_x, slice_col in enumerate(slice_gen(num_cols, col_blk_size)):
+                for idx_x, slice_col in enumerate(
+                    slice_gen(num_cols, col_blk_size)
+                ):
                     col_slice_size = slice_col.stop - slice_col.start
 
                     ds_blk = h5_ds.ReadAsArray(
@@ -1860,22 +1945,26 @@ class RTCReader(DataReader):
         }
 
         with h5py.File(input_rtc, "r") as src_h5:
-            orbit_pass_dir = src_h5[dswx_meta_mapping["RTC_ORBIT_PASS_DIRECTION"]][
+            orbit_pass_dir = src_h5[
+                dswx_meta_mapping["RTC_ORBIT_PASS_DIRECTION"]
+            ][()].decode()
+            look_dir = src_h5[dswx_meta_mapping["RTC_LOOK_DIRECTION"]][
                 ()
             ].decode()
-            look_dir = src_h5[dswx_meta_mapping["RTC_LOOK_DIRECTION"]][()].decode()
-            prod_ver = src_h5[dswx_meta_mapping["RTC_PRODUCT_VERSION"]][()].decode()
-            zero_dopp_start = src_h5[dswx_meta_mapping["RTC_SENSING_START_TIME"]][
+            prod_ver = src_h5[dswx_meta_mapping["RTC_PRODUCT_VERSION"]][
                 ()
             ].decode()
+            zero_dopp_start = src_h5[
+                dswx_meta_mapping["RTC_SENSING_START_TIME"]
+            ][()].decode()
             zero_dopp_end = src_h5[dswx_meta_mapping["RTC_SENSING_END_TIME"]][
                 ()
             ].decode()
             frame_number = src_h5[dswx_meta_mapping["RTC_FRAME_NUMBER"]][()]
             track_number = src_h5[dswx_meta_mapping["RTC_TRACK_NUMBER"]][()]
-            abs_orbit_number = src_h5[dswx_meta_mapping["RTC_ABSOLUTE_ORBIT_NUMBER"]][
-                ()
-            ]
+            abs_orbit_number = src_h5[
+                dswx_meta_mapping["RTC_ABSOLUTE_ORBIT_NUMBER"]
+            ][()]
             try:
                 input_slc_granules = src_h5[
                     dswx_meta_mapping["RTC_INPUT_L1_SLC_GRANULES"]

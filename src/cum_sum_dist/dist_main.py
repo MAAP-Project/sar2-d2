@@ -77,7 +77,9 @@ def get_rtc_stack_block(filename_list, blocksize, block_ind, scale="db"):
     base_lr_x = np.max(ref_lon_rtc)
     base_lr_y = ref_lat_rtc[row_end]
 
-    target_rtc_set = np.empty([block_rows_data, refcols, number_scene], dtype=float)
+    target_rtc_set = np.empty(
+        [block_rows_data, refcols, number_scene], dtype=float
+    )
 
     for find, fname in enumerate(filename_list):
         print("file reading", find, fname)
@@ -97,13 +99,24 @@ def get_rtc_stack_block(filename_list, blocksize, block_ind, scale="db"):
         target_rtc_image = np.empty([row_sub, col_sub], dtype=float)
         band = src_tif.GetRasterBand(1)
         target_rtc_image = band.ReadAsArray(
-            int(target_ul_x_ind), int(target_ul_y_ind), int(col_sub), int(row_sub)
+            int(target_ul_x_ind),
+            int(target_ul_y_ind),
+            int(col_sub),
+            int(row_sub),
         )
 
-        off_x_start = np.round((lon_rtc[target_ul_x_ind] - base_ul_x) / lon_spacing)
-        off_x_end = np.round((lon_rtc[target_lr_x_ind] - base_lr_x) / lon_spacing)
-        off_y_start = -np.round((lat_rtc[target_ul_y_ind] - base_ul_y) / lat_spacing)
-        off_y_end = -np.round((lat_rtc[target_lr_y_ind] - base_lr_y) / lat_spacing)
+        off_x_start = np.round(
+            (lon_rtc[target_ul_x_ind] - base_ul_x) / lon_spacing
+        )
+        off_x_end = np.round(
+            (lon_rtc[target_lr_x_ind] - base_lr_x) / lon_spacing
+        )
+        off_y_start = -np.round(
+            (lat_rtc[target_ul_y_ind] - base_ul_y) / lat_spacing
+        )
+        off_y_end = -np.round(
+            (lat_rtc[target_lr_y_ind] - base_lr_y) / lat_spacing
+        )
 
         if off_y_start < 0:
             off_y_start = 0
@@ -169,7 +182,9 @@ def process_row(row, polarizations, filter_option, block_param):
     actual_pol = []
     for polarization in polarizations:
         file_path = (
-            row["geotiff_co"] if polarization in ["HH", "VV"] else row["geotiff_cross"]
+            row["geotiff_co"]
+            if polarization in ["HH", "VV"]
+            else row["geotiff_cross"]
         )
         if file_path is not None:
             if os.path.exists(file_path):
@@ -364,7 +379,9 @@ def dist_workflow(cfg):
             data_stack_df.at[t, "geotiff_co"] = output_filename
         if row["geotiff_cross"] is not None:
             if os.path.exists(row["geotiff_cross"]):
-                output_filename = f"{scratch_dir}/{formatted_time}_HV_resampled.tif"
+                output_filename = (
+                    f"{scratch_dir}/{formatted_time}_HV_resampled.tif"
+                )
                 util.resample_and_crop_with_gdalwarp(
                     row["geotiff_cross"],
                     output_filename,
@@ -452,7 +469,9 @@ def dist_workflow(cfg):
             )
 
             da_mean = sorted_ds.mean("time").sel(polarization=pol_single)
-            mean_backscatter_path = f"{output_dir}/mean_backscatter_{pol_single}.tif"
+            mean_backscatter_path = (
+                f"{output_dir}/mean_backscatter_{pol_single}.tif"
+            )
 
             util.write_raster_block(
                 mean_backscatter_path,
@@ -466,11 +485,15 @@ def dist_workflow(cfg):
 
             if proc_param.debug_mode:
 
-                change_path_name = f"{scratch_dir}/cumsum_maximum_{pol_single}.tif"
+                change_path_name = (
+                    f"{scratch_dir}/cumsum_maximum_{pol_single}.tif"
+                )
                 print(f"saving {change_path_name}")
                 util.write_raster_block(
                     change_path_name,
-                    np.squeeze(cumsum_result_diff.sel(polarization=pol_single).values),
+                    np.squeeze(
+                        cumsum_result_diff.sel(polarization=pol_single).values
+                    ),
                     block_param=block_param,
                     geotransform=image_meta["geotransform"],
                     projection=image_meta["projection"],
@@ -519,9 +542,7 @@ def dist_workflow(cfg):
                 date_str = pd.to_datetime(time_step.values).strftime("%Y%m%d")
 
                 if proc_param.debug_mode:
-                    output_path = (
-                        f"{scratch_dir}/cumsum_result_{date_str}_{pol_single}.tif"
-                    )
+                    output_path = f"{scratch_dir}/cumsum_result_{date_str}_{pol_single}.tif"
                     # Save the data to a GeoTIFF file
                     util.write_raster_block(
                         output_path,
@@ -533,7 +554,9 @@ def dist_workflow(cfg):
                         cog_flag=True,
                     )
 
-            cumsum_result_diff = cumsum_result_diff.where(cumsum_result_diff > 0)
+            cumsum_result_diff = cumsum_result_diff.where(
+                cumsum_result_diff > 0
+            )
             cumsum_result_diff = cumsum_result_diff.where(
                 cumsum_result.max(dim="time") > 0
             )  # Only care for positive values in Smax
@@ -542,7 +565,9 @@ def dist_workflow(cfg):
             # arr = Sdiff.values.flatten()
             if proc_param.threshold is None:
                 dthres = np.nanpercentile(
-                    cumsum_result_diff.sel(polarization=pol_single).values.flatten(),
+                    cumsum_result_diff.sel(
+                        polarization=pol_single
+                    ).values.flatten(),
                     quantile,
                 )
                 print(
@@ -551,7 +576,9 @@ def dist_workflow(cfg):
 
             else:
                 dthres = proc_param.threshold
-                print(f"Setting the threshold for User-defined value: {dthres:.3f}")
+                print(
+                    f"Setting the threshold for User-defined value: {dthres:.3f}"
+                )
 
             dmask = cumsum_result_diff > dthres
             cumsum_result_diff = cumsum_result_diff.where(dmask)
@@ -575,9 +602,9 @@ def dist_workflow(cfg):
             dmask = dmask.sel(polarization=pol_single)
             qmetric_residuals = qmetric_residuals.where(dmask)
 
-            cumsum_result_masked = cumsum_result.sel(polarization=pol_single).where(
-                dmask
-            )
+            cumsum_result_masked = cumsum_result.sel(
+                polarization=pol_single
+            ).where(dmask)
             cumsum_result_max_masked = cumsum_result_masked.max("time")
             cumsum_result_min_masked = cumsum_result_masked.min("time")
             cumsum_result_Diff_masked = (
@@ -588,14 +615,18 @@ def dist_workflow(cfg):
             n_bootstraps = bootstrap_number
             print(f"Number of bootstraps in the trial run {n_bootstraps}")
             # Prepare arguments for each iteration
-            args_list = [(qmetric_residuals, dmask) for _ in range(n_bootstraps)]
+            args_list = [
+                (qmetric_residuals, dmask) for _ in range(n_bootstraps)
+            ]
 
             # Run in parallel
             with ProcessPoolExecutor() as executor:
                 results = list(executor.map(bootstrap_trial, args_list))
 
             # Initialize variables
-            n_cumsum_result_gt_Sdiff_random = xr.zeros_like(cumsum_result_Diff_masked)
+            n_cumsum_result_gt_Sdiff_random = xr.zeros_like(
+                cumsum_result_Diff_masked
+            )
             Sdiff_random_list = []
 
             # Aggregate results
@@ -622,7 +653,9 @@ def dist_workflow(cfg):
 
             if proc_param.debug_mode:
 
-                confidence_path_name = f"{output_dir}/confidence_{pol_single}.tif"
+                confidence_path_name = (
+                    f"{output_dir}/confidence_{pol_single}.tif"
+                )
                 util.write_raster_block(
                     confidence_path_name,
                     np.squeeze(CL_da.values),
@@ -682,7 +715,9 @@ def dist_workflow(cfg):
                     cumsum_result_diff_single_date = cumsum_result.sel(
                         time=time_step
                     ) - cumsum_result.min(dim="time")
-                    date_str = pd.to_datetime(time_step.values).strftime("%Y-%m-%d")
+                    date_str = pd.to_datetime(time_step.values).strftime(
+                        "%Y-%m-%d"
+                    )
 
                     mean_X_date = (
                         X.sel(time=time_step)
@@ -691,7 +726,9 @@ def dist_workflow(cfg):
                         .item()
                     )
                     mean_cumsum_result_date = (
-                        cumsum_result_diff_single_date.sel(polarization=pol_single)
+                        cumsum_result_diff_single_date.sel(
+                            polarization=pol_single
+                        )
                         .mean(dim=("x", "y"), skipna=True)
                         .item()
                     )
@@ -710,7 +747,9 @@ def dist_workflow(cfg):
                         )
                     )  # Only care for positive values in Smax
                     mean_cumsum_result_date = (
-                        cumsum_result_diff_single_date.sel(polarization=pol_single)
+                        cumsum_result_diff_single_date.sel(
+                            polarization=pol_single
+                        )
                         .mean(dim=("x", "y"), skipna=True)
                         .item()
                     )
@@ -719,11 +758,11 @@ def dist_workflow(cfg):
                     cumsum_result_diff_single_date = (
                         cumsum_result_diff_single_date.where(dmask_single)
                     )
-                    change_path_name = (
-                        f"{output_dir}/cumsum_single_{date_str}_{pol_single}.tif"
-                    )
+                    change_path_name = f"{output_dir}/cumsum_single_{date_str}_{pol_single}.tif"
                     mean_cumsum_result_date = (
-                        cumsum_result_diff_single_date.sel(polarization=pol_single)
+                        cumsum_result_diff_single_date.sel(
+                            polarization=pol_single
+                        )
                         .mean(dim=("x", "y"), skipna=True)
                         .item()
                     )
@@ -742,12 +781,12 @@ def dist_workflow(cfg):
                         cog_flag=True,
                     )
 
-                    change_path_name = (
-                        f"{output_dir}/cumsum_single_binary_{date_str}_{pol_single}.tif"
-                    )
+                    change_path_name = f"{output_dir}/cumsum_single_binary_{date_str}_{pol_single}.tif"
                     util.write_raster_block(
                         change_path_name,
-                        np.squeeze(dmask_single.sel(polarization=pol_single).values),
+                        np.squeeze(
+                            dmask_single.sel(polarization=pol_single).values
+                        ),
                         block_param=block_param,
                         geotransform=image_meta["geotransform"],
                         projection=image_meta["projection"],
@@ -758,21 +797,29 @@ def dist_workflow(cfg):
                 cumsum_result_masked - cumsum_result_min_masked
             )
             # Apply a mask to ensure only positive values are considered
-            cumsum_result_Diff_array_masked = cumsum_result_Diff_array_masked.where(
-                cumsum_result_Diff_array_masked > 0
+            cumsum_result_Diff_array_masked = (
+                cumsum_result_Diff_array_masked.where(
+                    cumsum_result_Diff_array_masked > 0
+                )
             )
             cumsum_result_Diff_array_masked_filled = (
                 cumsum_result_Diff_array_masked.fillna(-np.inf)
             )
 
             # Determine where there is at least one non-NaN value along the time dimension
-            valid_data_mask = cumsum_result_Diff_array_masked.notnull().any(dim="time")
+            valid_data_mask = cumsum_result_Diff_array_masked.notnull().any(
+                dim="time"
+            )
 
             # Initialize arrays to hold max values and year information
-            max_change_data = cumsum_result_Diff_array_masked.max(dim="time").where(
+            max_change_data = cumsum_result_Diff_array_masked.max(
+                dim="time"
+            ).where(
                 valid_data_mask, drop=True
             )  # Get max value along time where valid data exists
-            max_time_index = cumsum_result_Diff_array_masked.fillna(-np.inf).argmax(
+            max_time_index = cumsum_result_Diff_array_masked.fillna(
+                -np.inf
+            ).argmax(
                 dim="time"
             )  # Find max time index, ignoring NaNs
 
@@ -782,7 +829,9 @@ def dist_workflow(cfg):
             year_of_max = time_of_max.dt.year
             year_data_ref = year_of_max - 2005  # Offset year data as required
             # Replace areas where dmask is False with 255 in year_data_ref
-            year_data_ref = year_data_ref.where(dmask & CL_da_mask & valid_mask, 0)
+            year_data_ref = year_data_ref.where(
+                dmask & CL_da_mask & valid_mask, 0
+            )
 
             # Convert the result to an integer type since 255 is an integer
             year_data_ref = year_data_ref.astype(int)
