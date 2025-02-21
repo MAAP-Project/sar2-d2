@@ -11,13 +11,11 @@ import numpy as np
 import yamale
 from ruamel.yaml import YAML
 
-import cum_sum_dist
-
 # from dist import check_gdal_raster_s3
 
 logger = logging.getLogger("sar2-d2")
 
-WORKFLOW_SCRIPTS_DIR = os.path.dirname(cum_sum_dist.__file__)
+WORKFLOW_SCRIPTS_DIR = os.path.dirname(__file__)
 
 # Potential polarization scenarios for DSWx-S1
 # NOTE: DO NOT CHANGE THE ORDER of the items in the dictionary below.
@@ -142,10 +140,7 @@ def load_validate_yaml(yaml_path: str, workflow_name: str) -> dict:
     try:
         yamale.validate(schema, data)
     except yamale.YamaleError as yamale_err:
-        err_str = (
-            f"Validation fail for {workflow_name} "
-            f"runconfig yaml {yaml_path}."
-        )
+        err_str = f"Validation fail for {workflow_name} " f"runconfig yaml {yaml_path}."
         logger.error(err_str)
         raise yamale.YamaleError(err_str) from yamale_err
 
@@ -218,9 +213,7 @@ def get_pol_rtc_hdf5(input_rtc, freq_group):
     # basename separates file name from directory in path string
     # splitext removes the file extension from basename
     # split('_')[-1] gets polarization
-    path_pol = (
-        f"/science/LSAR/GCOV/grids/frequency{freq_group}/listOfPolarizations"
-    )
+    path_pol = f"/science/LSAR/GCOV/grids/frequency{freq_group}/listOfPolarizations"
 
     with h5py.File(input_rtc) as src:
         pols = src[path_pol][()]
@@ -291,9 +284,7 @@ def read_rtc_polarization(input_h5_list, freq_list):
         # Check to see if frequency group of an input file is empty
         if freq_list[input_idx]:
             for freq_idx, freq_group in enumerate(freq_list[input_idx]):
-                pol_list[input_idx, freq_idx] = get_pol_rtc_hdf5(
-                    input_h5, freq_group
-                )
+                pol_list[input_idx, freq_idx] = get_pol_rtc_hdf5(input_h5, freq_group)
 
     return pol_list
 
@@ -345,9 +336,7 @@ def verify_nisar_mode(input_dir_list):
     pol_list = read_rtc_polarization(input_dir_list, freq_list)
 
     # Compare polariztions of frequency groups among input files
-    flag_pol_freq_a_equal, flag_pol_freq_b_equal = compare_rtc_polarization(
-        pol_list
-    )
+    flag_pol_freq_a_equal, flag_pol_freq_b_equal = compare_rtc_polarization(pol_list)
 
     # Determine NiSAR input RTC mode of operation
     if flag_freq_equal and flag_pol_freq_a_equal and flag_pol_freq_b_equal:
@@ -504,9 +493,7 @@ def wrap_namespace(ob):
 
 @wrap_namespace.register(dict)
 def _wrap_dict(ob):
-    return SimpleNamespace(
-        **{key: wrap_namespace(val) for key, val in ob.items()}
-    )
+    return SimpleNamespace(**{key: wrap_namespace(val) for key, val in ob.items()})
 
 
 @wrap_namespace.register(list)

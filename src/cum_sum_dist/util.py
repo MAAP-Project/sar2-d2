@@ -1,18 +1,16 @@
 import logging
-import os
 import math
+import os
 import shutil
-import tempfile
 import subprocess
+import tempfile
+from dataclasses import dataclass
 
-import numpy as np
 import h5py
+import numpy as np
 from osgeo import gdal, osr
 from rasterio.transform import Affine
 from shapely.geometry import LinearRing, Point, Polygon, box
-
-from dataclasses import dataclass
-
 
 np2gdal_conversion = {
     "byte": 1,
@@ -146,52 +144,9 @@ def read_metadata_hdf5(input_rtc):
     return dswx_metadata_dict
 
 
-def get_gcov_size(filename, path):
-
-    with h5py.File(filename) as src:
-        h5_ds = src[path]
-        shape = h5_ds.shape
-        height, width = shape[-2], shape[-1]
-    return width, height
-
-
-def read_tif_latlon(intput_tif_str):
-    #  Initialize the Image Size
-    ds = gdal.Open(intput_tif_str)
-    proj = osr.SpatialReference(wkt=ds.GetProjection())
-    epsg_input = proj.GetAttrValue("AUTHORITY", 1)
-
-    width = ds.RasterXSize
-    height = ds.RasterYSize
-    gt = ds.GetGeoTransform()
-    minx = gt[0]
-    miny = gt[3] + width * gt[4] + height * gt[5]
-    maxx = gt[0] + width * gt[1] + height * gt[2]
-    maxy = gt[3]
-
-    ds = None
-    del ds  # close the dataset (Python object and pointers)
-    if epsg_input != 4326:
-        xcoords = [minx, maxx, maxx, minx]
-        ycoords = [miny, miny, maxy, maxy]
-
-        poly_wkt = []  # Initialize as a list
-
-        for xcoord, ycoord in zip(xcoords, ycoords):
-            lon, lat = get_lonlat(xcoord, ycoord, int(epsg_input))
-            poly_wkt.append((lon, lat))
-
-        poly = Polygon(poly_wkt)
-    else:
-        poly = box(minx, miny, maxx, maxy)
-
-    return poly
-
-
 def get_lonlat(xcoord, ycoord, epsg):
 
-    from osgeo import ogr
-    from osgeo import osr
+    from osgeo import ogr, osr
 
     InSR = osr.SpatialReference()
     InSR.ImportFromEPSG(epsg)  # WGS84/Geographic
@@ -205,140 +160,6 @@ def get_lonlat(xcoord, ycoord, epsg):
     )  # tell the point what coordinates it's in
     Point.TransformTo(OutSR)  # project it to the out spatial reference
     return Point.GetX(), Point.GetY()
-
-
-def get_rtc_stack_block(filename_list, path, blocksize, block_ind, scale="db"):
-    refind = 0
-
-    # define basic frame from first scene
-    rtc_path = filename_list[refind]
-    refcols, refrows = get_gcov_size(rtc_path, path)
-
-    nblocks = int(np.ceil(refrows / blocksize))
-    number_scene = len(filename_list)
-
-    ref_lat_rtc, ref_lon_rtc = read_tif_latlon(filename_list[refind])
-
-    # measure georeferenced offset in range and azimuth
-    offset_x = []
-    offset_y = []
-    for find, fname in enumerate(filename_list):
-        lat_rtc, lon_rtc = read_tif_latlon(filename_list[1])
-
-        lon_spacing = np.abs(lon_rtc[1] - lon_rtc[2])
-        lat_spacing = np.abs(lat_rtc[1] - lat_rtc[2])
-        lon_rtc_diff = lon_rtc[1] - ref_lon_rtc[1]
-        lat_rtc_diff = lat_rtc[1] - ref_lat_rtc[1]
-
-        # print(lon_rtc_diff, lon_rtc_diff / lon_spacing)
-        offset_x.append((lon_rtc_diff / lon_spacing))
-        offset_y.append((lat_rtc_diff / lat_spacing))
-
-    # loop for secondary RTCs
-    avg_raster_whole = np.empty([refrows, refcols])
-    std_raster_whole = np.empty([refrows, refcols])
-    max_raster_whole = np.empty([refrows, refcols])
-    avg_raster_whole[:] = np.nan
-    std_raster_whole[:] = np.nan
-    max_raster_whole[:] = np.nan
-    # temp_raster = np.ones([refrows, refcols, number_scene])
-    block = block_ind
-
-    row_start = block * blocksize
-    row_end = row_start + blocksize
-
-    if row_end > refrows:
-        row_end = refrows
-        block_rows_data = row_end - row_start
-
-    else:
-        block_rows_data = blocksize
-
-    print("-- reading block: ", block, row_start, row_end, block_rows_data)
-
-    base_ul_x = np.min(ref_lon_rtc)
-    base_ul_y = ref_lat_rtc[row_start]
-    base_lr_x = np.max(ref_lon_rtc)
-    base_lr_y = ref_lat_rtc[row_end]
-
-    target_rtc_set = np.empty(
-        [block_rows_data, refcols, number_scene], dtype=float
-    )
-
-    for find, fname in enumerate(filename_list):
-        print("file reading", find, fname)
-        lat_rtc, lon_rtc = read_hdf_latlon(fname, path)
-
-        src_tif = gdal.Open(fname, gdal.GA_ReadOnly)
-        # x and y coordinates for reference raster
-        target_ul_x_ind = (np.abs(lon_rtc - base_ul_x)).argmin()
-        target_ul_y_ind = (np.abs(lat_rtc - base_ul_y)).argmin()
-
-        target_lr_x_ind = (np.abs(lon_rtc - base_lr_x)).argmin()
-        target_lr_y_ind = (np.abs(lat_rtc - base_lr_y)).argmin()
-
-        row_sub = target_lr_y_ind - target_ul_y_ind
-        col_sub = target_lr_x_ind - target_ul_x_ind
-
-        target_rtc_image = np.empty([row_sub, col_sub], dtype=float)
-        with h5py.File(fname) as src:
-            band = src[path]
-
-        # Extract the subset using slicing
-        subset = band[
-            int(target_ul_y_ind) : int(target_ul_y_ind) + int(row_sub),
-            int(target_ul_x_ind) : int(target_ul_x_ind) + int(col_sub),
-        ]
-
-        # Optionally, convert to a NumPy array if further processing is needed
-        target_rtc_image = np.array(subset)
-        # target_rtc_image = band.ReadAsArray(int(target_ul_x_ind),
-        #     int(target_ul_y_ind),
-        #     int(col_sub), int(row_sub))
-
-        off_x_start = np.round(
-            (lon_rtc[target_ul_x_ind] - base_ul_x) / lon_spacing
-        )
-        off_x_end = np.round(
-            (lon_rtc[target_lr_x_ind] - base_lr_x) / lon_spacing
-        )
-        off_y_start = -np.round(
-            (lat_rtc[target_ul_y_ind] - base_ul_y) / lat_spacing
-        )
-        off_y_end = -np.round(
-            (lat_rtc[target_lr_y_ind] - base_lr_y) / lat_spacing
-        )
-
-        if off_y_start < 0:
-            off_y_start = 0
-        if off_y_end > 0:
-            off_y_end = 0
-        if off_x_start < 0:
-            off_x_start = 0
-        if off_x_end > 0:
-            off_x_end = 0
-
-        src_tif = None
-        del src_tif
-        band = None
-        del band
-        image_rows, image_cols = np.shape(target_rtc_image)
-        if scale == "db":
-            target_rtc_image[target_rtc_image < -30] = np.nan
-            target_rtc_set[
-                int(off_y_start) : int(image_rows + off_y_start),
-                int(off_x_start) : int(off_x_start + image_cols),
-                find,
-            ] = 10 * np.log10(target_rtc_image)
-        else:
-            target_rtc_image[target_rtc_image < (10**-10)] = np.nan
-            target_rtc_set[
-                int(off_y_start) : int(image_rows + off_y_start),
-                int(off_x_start) : int(off_x_start + image_cols),
-                find,
-            ] = target_rtc_image
-
-    return target_rtc_set
 
 
 def get_meta_from_tif(tif_file_name):
@@ -375,119 +196,9 @@ def get_meta_from_tif(tif_file_name):
     return meta_dict
 
 
-def read_geotiff(input_tif_str, band_ind=None, verbose=True):
-    """Read band from geotiff
-
-    Parameters
-    ----------
-    input_tif_str: str
-        geotiff file path to read the band
-    band_ind: int
-        Index of the band to read, starts from 0
-
-    Returns
-    -------
-    tifdata: numpy.ndarray
-        image from geotiff
-    """
-    tif = gdal.Open(input_tif_str)
-    if band_ind is None:
-        tifdata = tif.ReadAsArray()
-    else:
-        tifdata = tif.GetRasterBand(band_ind + 1).ReadAsArray()
-
-    tif.FlushCache()
-    tif = None
-    del tif
-    if verbose:
-        print(f" -- Reading {input_tif_str} ... {tifdata.shape}")
-    return tifdata
-
-
-def read_hdf_latlon(intput_h5_path, path):
-    #  Initialize the Image Size
-
-    dataset = f"HDF5:{intput_h5_path}:/{path}"
-    h5_ds = gdal.Open(dataset, gdal.GA_ReadOnly)
-    with h5py.File(intput_h5_path) as src:
-        h5_ds = src[path]
-        shape = h5_ds.shape
-        width, height = shape[-2], shape[-1]
-
-    gt, crs = read_geodata_hdf5(intput_h5_path)
-
-    minx = gt[0]
-    miny = gt[3] + width * gt[4] + height * gt[5]
-    maxx = gt[0] + width * gt[1] + height * gt[2]
-    maxy = gt[3]
-
-    xres = (maxx - minx) / float(width)
-    yres = (maxy - miny) / float(height)
-    # get the coordinates in lat long
-    lat = np.linspace(maxy, miny, height + 1)
-    lon = np.linspace(minx, maxx, width + 1)
-
-    ds = None
-    del ds  # close the dataset (Python object and pointers)
-
-    return lat, lon
-
-
-def read_geodata_hdf5(input_rtc):
-    """
-    Extract data from RTC Geo information and store it as a dictionary
-
-<<<<<<< HEAD
-    Parameters
-=======
-    parameters
->>>>>>> 9f50279 (add pre-commit file; re-run Black)
-    ----------
-    input_rtc: str
-        The HDF5 RTC input file path
-
-    Returns
-    -------
-    geotransform: Affine Transformation object
-        Transformation matrix which maps pixel locations in (row, col)
-        coordinates to (x, y) spatial positions.
-    crs: str
-        Coordinate Reference System object in EPSG representation
-    """
-    frequency_a_path = "/science/LSAR/GCOV/grids/frequencyA"
-    geo_name_mapping = {
-        "xcoord": f"{frequency_a_path}/xCoordinates",
-        "ycoord": f"{frequency_a_path}/yCoordinates",
-        "xposting": f"{frequency_a_path}/xCoordinateSpacing",
-        "yposting": f"{frequency_a_path}/yCoordinateSpacing",
-        "proj": f"{frequency_a_path}/projection",
-    }
-
-    with h5py.File(input_rtc, "r") as src_h5:
-        xmin = src_h5[f"{geo_name_mapping['xcoord']}"][:][0]
-        ymin = src_h5[f"{geo_name_mapping['ycoord']}"][:][0]
-        xres = src_h5[f"{geo_name_mapping['xposting']}"][()]
-        yres = src_h5[f"{geo_name_mapping['yposting']}"][()]
-        epsg = src_h5[f"{geo_name_mapping['proj']}"][()]
-
-    # Geo transformation
-    geotransform = Affine.translation(
-        xmin - xres / 2, ymin - yres / 2
-    ) * Affine.scale(xres, yres)
-
-    # Coordinate Reference System
-    crs = f"EPSG:{epsg}"
-
-    return geotransform, crs
-
-
 def block_param_generator(lines_per_block, data_shape, pad_shape):
-<<<<<<< HEAD
     """
     Generator for block specific parameter class.
-=======
-    """Generator for block specific parameter class.
->>>>>>> 9f50279 (add pre-commit file; re-run Black)
 
     Parameters
     ----------
@@ -616,15 +327,10 @@ class BlockParam:
 
 
 def get_raster_block(raster_path, block_param):
-<<<<<<< HEAD
     """
     Get a block of data from raster.
 
     Raster can be a HDF5 file or a GDAL-friendly raster
-=======
-    """Get a block of data from raster.
-        Raster can be a HDF5 file or a GDAL-friendly raster
->>>>>>> 9f50279 (add pre-commit file; re-run Black)
 
     Parameters
     ----------
