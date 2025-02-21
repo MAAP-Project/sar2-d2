@@ -16,6 +16,7 @@ runconfig:
             forest_mask_threshold: num(required=False)
             bootstrap_number: int(min=1, required=False)
             confidence_threshold: num(min=0, max=1, required=False)
+            seed_for_random: int(min=0, required=False)
 
         product_path_group:
             # Directory where SAS can write temporary data

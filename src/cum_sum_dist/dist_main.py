@@ -57,8 +57,9 @@ def run_bootstrap(args):
 
 def bootstrap_trial(args):
     """Single bootstrap iteration."""
-    qmetric_residuals, dmask = args
+    qmetric_residuals, dmask, seed = args
     # Shuffle time axis for permutation
+    np.random.seed(seed)
     permutation = np.random.permutation(len(qmetric_residuals["time"]))
     Srandom = qmetric_residuals.isel(time=permutation).cumsum("time")
     Srandom = Srandom.where(dmask)
@@ -125,6 +126,7 @@ def dist_workflow(cfg):
     resamp_out_res = cfg.groups.product_path_group.output_spacing
     confidence_threshold = proc_param.confidence_threshold
     filter_option = {"lambda_value": proc_param.filter_lambda}
+    seed_for_random = proc_param.seed_for_random
 
     polarizations = util.extract_nisar_polarization(input_gcov_list)
     date_str_list = []
@@ -440,7 +442,9 @@ def dist_workflow(cfg):
             n_bootstraps = bootstrap_number
             print(f"Number of bootstraps in the trial run {n_bootstraps}")
             # Prepare arguments for each iteration
-            args_list = [(qmetric_residuals, dmask) for _ in range(n_bootstraps)]
+            args_list = [
+                (qmetric_residuals, dmask, seed_for_random) for _ in range(n_bootstraps)
+            ]
 
             # Run in parallel
             with ProcessPoolExecutor() as executor:

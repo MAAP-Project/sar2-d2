@@ -30,5 +30,6 @@ runconfig:
             forest_mask_threshold: -35 # dB
             bootstrap_number: 20
             confidence_threshold: 0.9
+            seed_for_random: null
 
         log_file: None
