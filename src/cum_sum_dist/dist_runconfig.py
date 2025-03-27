@@ -191,23 +191,6 @@ def check_write_dir(dst_path: str):
         raise PermissionError(err_str)
 
 
-def check_file_path(file_path: str) -> None:
-    """Check if file_path exist else raise an error.
-    Parameters
-    ----------
-    file_path : str
-        Path to file to be checked
-    """
-    if file_path.startswith("/vsis3/"):
-        check_gdal_raster_s3(file_path, raise_error=True)
-
-    else:
-        if not os.path.exists(file_path):
-            err_str = f"{file_path} not found"
-            logger.error(err_str)
-            raise FileNotFoundError(err_str)
-
-
 def get_pol_rtc_hdf5(input_rtc, freq_group):
     # convenience function to get polarization from RTC file path
     # basename separates file name from directory in path string
@@ -260,7 +243,6 @@ def check_rtc_frequency(input_h5_list):
         )  # If only one file, frequencies are trivially equal
 
     freq_list = np.empty(num_input_files, dtype=object)
-    flag_pol_equal = True
 
     for input_idx, input_h5 in enumerate(input_h5_list):
         freq_list[input_idx] = get_freq_rtc_hdf5(input_h5)
@@ -290,7 +272,6 @@ def read_rtc_polarization(input_h5_list, freq_list):
 
 
 def compare_rtc_polarization(pol_list):
-    num_input_files = len(pol_list)
 
     pol_freq_a = pol_list[:, 0]
     pol_freq_b = pol_list[:, 1]
@@ -373,13 +354,12 @@ def _find_polarization_from_data_dirs(input_h5_list):
         This list contains the polarization identifiers
         (like 'HH', 'VV', etc.) found in the filenames.
     """
-    num_input_rtc = len(input_h5_list)
 
     for input_idx, input_h5 in enumerate(input_h5_list):
         extracted_strings = []
         freq_strings = get_freq_rtc_hdf5(input_h5)
 
-        for freq_idx, input_freq in enumerate(freq_strings):
+        for input_freq in freq_strings:
             extracted_strings += get_pol_rtc_hdf5(input_h5, input_freq)
 
         if input_idx == 0:
@@ -539,20 +519,14 @@ class RunConfig:
 
         # Convert runconfig dict to SimpleNamespace
         sns = wrap_namespace(groups_cfg)
-        product = sns.primary_executable.product_type
-        sensor = product.split("_")[-1]
 
         input_dir_list = cfg["runconfig"]["groups"]["input_file_group"][
             "input_file_path"
         ]
 
         # Determine NISAR input RTC mode of operation
-        (
-            flag_freq_equal,
-            flag_pol_freq_a_equal,
-            flag_pol_freq_b_equal,
-            nisar_uni_mode,
-        ) = verify_nisar_mode(input_dir_list)
+        # TODO (Sam): Is this function call necessary?
+        verify_nisar_mode(input_dir_list)
 
         log_file = sns.log_file
         if args.log_file is not None:
