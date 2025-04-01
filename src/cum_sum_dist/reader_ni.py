@@ -118,9 +118,6 @@ def requires_reprojection(
 def get_meta_from_tif(tif_file_name):
     """Read metadata from geotiff
 
-    # TODO (Sam): This function is (almost) copy-pasted in two modules.
-    # Is it possible to remove this redundancy?
-
     Parameters
     ----------
     input_tif_str: str
@@ -1524,9 +1521,6 @@ class RTCReader(DataReader):
     def extract_nisar_polarization(self, input_list):
         """Extract input RTC dataset polarizations
 
-        # TODO (Sam): This function is (almost) copy-pasted in two modules.
-        # Is it possible to remove this redundancy?
-
         Parameters
         ----------
         input_list: list
@@ -1539,26 +1533,18 @@ class RTCReader(DataReader):
         """
 
         pol_list_path = "/science/LSAR/GCOV/grids/frequencyA/listOfPolarizations"
-        polarizations = []
-        pols_rtc = []
+
+        polarizations = set()
         for input_rtc in input_list:
-            print(input_rtc)
             # Check if the file exists
             if not os.path.exists(input_rtc):
                 raise FileNotFoundError(f"The file '{input_rtc}' does not exist.")
             with h5py.File(input_rtc, "r") as src_h5:
-                pols = np.sort(src_h5[pol_list_path][()])
-                if len(polarizations) == 0:
-                    polarizations = pols.copy()
-                elif not np.all(polarizations == pols):
-                    raise ValueError(
-                        "Polarizations of multiple RTC files are not consistent."
-                    )
+                pols = src_h5[pol_list_path][()]
+                pols = {p.decode("utf-8") for p in pols}
+                polarizations |= pols
 
-        for pol in polarizations:
-            pols_rtc = np.append(pols_rtc, pol.decode("utf-8"))
-
-        return pols_rtc
+        return polarizations
 
     def generate_nisar_dataset_name(self, data_name: str | list[str]):
         """Generate dataset paths

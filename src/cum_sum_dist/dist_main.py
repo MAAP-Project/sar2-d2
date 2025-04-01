@@ -48,11 +48,6 @@ def process_row(row, polarizations, filter_option, block_param):
     return da_polarized
 
 
-def run_bootstrap(args):
-    """Wrapper to call bootstrap_trial with arguments."""
-    return bootstrap_trial(*args)
-
-
 def bootstrap_trial(args):
     """Single bootstrap iteration."""
     qmetric_residuals, dmask, seed = args
@@ -126,7 +121,6 @@ def dist_workflow(cfg):
     filter_option = {"lambda_value": proc_param.filter_lambda}
     seed_for_random = proc_param.seed_for_random
 
-    polarizations = util.extract_nisar_polarization(input_gcov_list)
     date_str_list = []
     data_stack = []
 
@@ -227,7 +221,7 @@ def dist_workflow(cfg):
                 )
                 if os.path.isfile(output_filename):
                     data_stack_df.at[t, "geotiff_cross"] = output_filename
-    image_meta = util.get_meta_from_tif(data_stack_df.iloc[0]["geotiff_co"])
+    image_meta = reader_ni.get_meta_from_tif(data_stack_df.iloc[0]["geotiff_co"])
 
     pad_shape = (0, 0)
     block_params = util.block_param_generator(
@@ -235,6 +229,8 @@ def dist_workflow(cfg):
         data_shape=(geogrid_in.length, geogrid_in.width),
         pad_shape=pad_shape,
     )
+
+    polarizations = reader.extract_nisar_polarization(input_gcov_list)
 
     for block_ind, block_param in enumerate(block_params):
         print(f"Processing block {block_ind}")
