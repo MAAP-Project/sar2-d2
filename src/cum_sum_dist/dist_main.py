@@ -442,9 +442,7 @@ def dist_workflow(cfg):
             n_bootstraps = bootstrap_number
             print(f"Number of bootstraps in the trial run {n_bootstraps}")
             # Prepare arguments for each iteration
-            args_list = [
-                (qmetric_residuals, dmask, seed_for_random) for _ in range(n_bootstraps)
-            ]
+            args_list = [(qmetric_residuals, dmask, seed_for_random)] * n_bootstraps            
 
             # Run in parallel
             with ProcessPoolExecutor() as executor:
