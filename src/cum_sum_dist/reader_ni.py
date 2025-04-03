@@ -1033,28 +1033,17 @@ class RTCReader(DataReader):
             layover_path,
         )
 
-        # Choose Resampling methods
         if resamp_required:
-            # Apply multi-look technique
-            if resamp_method == "multilook":
-                if len(input_gtiff_list) > 0:
-                    for input_geotiff in input_gtiff_list:
-                        self.multi_look_average(
-                            input_geotiff,
-                            resamp_out_res,
-                            geogrid_in,
-                        )
-            else:
-                # Apply resampling using GDAL.Warp() based on
-                # resampling methods
-                if len(input_gtiff_list) > 0:
-                    for input_geotiff in input_gtiff_list:
-                        self.resample_rtc(
-                            input_geotiff,
-                            resamp_out_res,
-                            geogrid_in,
-                            resamp_method,
-                        )
+            # Apply resampling using GDAL.Warp() based on
+            # resampling methods
+            if len(input_gtiff_list) > 0:
+                for input_geotiff in input_gtiff_list:
+                    self.resample_rtc(
+                        input_geotiff,
+                        resamp_out_res,
+                        geogrid_in,
+                        resamp_method,
+                    )
             if len(layover_gtiff_list) > 0:
                 layover_exist = True
                 for layover_geotiff in layover_gtiff_list:
@@ -1338,107 +1327,6 @@ class RTCReader(DataReader):
 
         ds_input = None
         ds_output = None
-
-    def multi_look_average(
-        self,
-        input_geotiff: str,
-        output_res: float,
-        geogrid_in: DSWXGeogrid,
-    ):
-        """Apply upsampling and multi-look pixel averaging on input geotfif
-        to obtain Geotiff with desired output resolution
-
-        Parameters
-        ----------
-        input_geotiff: str
-            Input geotiff path to be resampled.
-        output_res: float
-            User define output resolution for multi-looked Geotiff
-        geogrid_in: DSWXGeogrid object
-            A dataclass object  representing the geographical grid
-            configuration for an RTC (Radar Terrain Correction) run.
-        """
-
-        ds_input = gdal.Open(input_geotiff)
-        geotransform_input = ds_input.GetGeoTransform()
-
-        input_width = ds_input.RasterXSize
-        input_length = ds_input.RasterYSize
-
-        input_res_x = np.abs(geotransform_input[1])
-        input_res_y = np.abs(geotransform_input[5])
-
-        if input_res_x != input_res_y:
-            raise ValueError("x and y resolutions of the input must be the same.")
-
-        full_path = Path(input_geotiff)
-        output_geotiff = f"{full_path.parent}/{full_path.stem}_multi_look.tif"
-
-        # Multi-look parameters
-        interm_upsamp_res = math.gcd(int(input_res_x), int(output_res))
-        downsamp_ratio = output_res // interm_upsamp_res  # ratio = 3
-        normalized_flag = True
-
-        if input_res_x == 20:
-            # Perform upsampling to 10 meter resolution
-            # Compute upsampled data output bounds
-            upsamp_bounds = _calculate_output_bounds(
-                geotransform_input,
-                input_width,
-                input_length,
-                interm_upsamp_res,
-            )
-
-            # Perform GDAL.warp() in memory for upsampled data
-            warp_options = gdal.WarpOptions(
-                xRes=interm_upsamp_res,
-                yRes=-interm_upsamp_res,
-                outputBounds=upsamp_bounds,
-                resampleAlg="nearest",
-                format="MEM",  # Use memory as the output format
-            )
-
-            ds_upsamp = gdal.Warp("", ds_input, options=warp_options)
-            data_upsamp = ds_upsamp.GetRasterBand(1).ReadAsArray()
-
-            # Aggregate pixel values in a image to lower resolution to achieve
-            # multi-looking effect
-            multi_look_output = _aggregate_10m_to_30m_conv(
-                data_upsamp,
-                downsamp_ratio,
-                normalized_flag,
-            )
-
-            # Write multi-look averaged data to output geotiff
-            self.write_array_to_geotiff(
-                ds_upsamp,
-                multi_look_output,
-                output_res,
-                output_geotiff,
-            )
-        elif input_res_x == 10:
-            # Directly average 10m resolution input to 30m resolution output
-            ds_array = ds_input.GetRasterBand(1).ReadAsArray()
-            multi_look_output = _aggregate_10m_to_30m_conv(
-                ds_array,
-                downsamp_ratio,
-                normalized_flag,
-            )
-            # Write to output geotiff
-            self.write_array_to_geotiff(
-                ds_input,
-                multi_look_output,
-                output_res,
-                output_geotiff,
-            )
-        else:
-            raise ValueError(
-                "Input RTC are expected to have only 10m or 20m resolutions."
-            )
-
-        # Update Geogrid in output Geotiff and replace the input Geotiff with it
-        geogrid_in.update_geogrid(output_geotiff)
-        os.replace(output_geotiff, input_geotiff)
 
     def write_array_to_geotiff(
         self,
