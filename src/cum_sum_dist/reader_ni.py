@@ -1015,22 +1015,17 @@ class RTCReader(DataReader):
         # Generate data paths
         data_path = self.generate_nisar_dataset_name(pols_rtc)
 
-        # Generate layover mask path
-        layover_mask_name = "layoverShadowMask"
-        layover_path = str(self.generate_nisar_layover_name(layover_mask_name))
-
         # Collect EPSG
         epsg_array = self.get_nisar_epsg(input_list)
 
         # Write all RTC HDF5 inputs to intermeidate Geotiff first and re-use
         # existing functions to reproject data and create mosaicked output
         # from intermediate Geotiffs
-        (geogrid_in, input_gtiff_list, layover_gtiff_list) = self.write_rtc_geotiff(
+        (geogrid_in, input_gtiff_list) = self.write_rtc_geotiff(
             input_list,
             scratch_dir,
             epsg_array,
             data_path,
-            layover_path,
         )
 
         # Choose Resampling methods
@@ -1055,22 +1050,6 @@ class RTCReader(DataReader):
                             geogrid_in,
                             resamp_method,
                         )
-            if len(layover_gtiff_list) > 0:
-                layover_exist = True
-                for layover_geotiff in layover_gtiff_list:
-                    self.resample_rtc(
-                        layover_geotiff,
-                        resamp_out_res,
-                        geogrid_in,
-                        "nearest",
-                    )
-            else:
-                layover_exist = False
-        else:
-            if len(layover_gtiff_list) > 0:
-                layover_exist = True
-            else:
-                layover_exist = False
 
         # Mosaic intermediate geotiffs
         nlooks_list = []
@@ -1082,7 +1061,6 @@ class RTCReader(DataReader):
             nlooks_list,
             mosaic_mode,
             mosaic_prefix,
-            layover_exist,
         )
 
     # Class functions
@@ -1092,7 +1070,6 @@ class RTCReader(DataReader):
         scratch_dir: str,
         epsg_array: np.ndarray,
         data_path: list,
-        layover_path: list,
     ):
         """Create intermediate Geotiffs from a list of input RTCs
 
@@ -1106,8 +1083,6 @@ class RTCReader(DataReader):
             EPSG of each of the RTC input HDF5
         data_path: list
             RTC dataset path within the HDF5 input file
-        layover_path: str
-            layoverShadowMask layer dataset path
 
         Returns
         -------
@@ -1116,8 +1091,6 @@ class RTCReader(DataReader):
             configuration for an RTC (Radar Terrain Correction) run.
         output_gtiff_list: list
             List of RTC Geotiffs derived from input RTC HDF5.
-        layover_gtiff_list: list
-            List of layoverShadow Mask Geotiffs derived from input RTC HDF5.
         """
 
         # Reproject geotiff
@@ -1126,7 +1099,6 @@ class RTCReader(DataReader):
 
         # List of written Geotiffs
         output_gtiff_list = []
-        layover_gtiff_list = []
 
         # Create intermediate input Geotiffs
         for input_rtc in input_list:
@@ -1198,21 +1170,7 @@ class RTCReader(DataReader):
                     # Update geogrid
                     geogrid_in.update_geogrid(output_gtiff)
 
-        # Generate Layover Shadow Mask Intermediate Geotiffs
-        for input_rtc in input_list:
-            layover_data = f"HDF5:{input_rtc}:/{layover_path}"
-            h5_layover = gdal.Open(layover_data, gdal.GA_ReadOnly)
-
-            # Check if layoverShadowMask layer exists:
-            if h5_layover is None:
-                warnings.warn(
-                    f"\nDataset at {layover_data} does not exist or "
-                    "cannot be opened.",
-                    RuntimeWarning,
-                )
-                break
-
-        return geogrid_in, output_gtiff_list, layover_gtiff_list
+        return geogrid_in, output_gtiff_list
 
     def mosaic_rtc_geotiff(
         self,
@@ -1223,7 +1181,6 @@ class RTCReader(DataReader):
         nlooks_list: list,
         mosaic_mode: str,
         mosaic_prefix: str,
-        layover_exist: bool,
     ):
         """Create mosaicked output Geotiff from a list of input RTCs
 
@@ -1245,9 +1202,6 @@ class RTCReader(DataReader):
             or 'burst_center'
         mosaic_prefix: str
             Mosaicked output file name prefix
-        layover_exist: bool
-            Boolean which indicates if a layoverShadowMask layer
-            exists in input RTC
         """
         for dataset_path in data_path:
             data_name = Path(dataset_path).name[:2]
@@ -1263,26 +1217,6 @@ class RTCReader(DataReader):
                 input_gtiff_list,
                 nlooks_list,
                 output_mosaic_gtiff,
-                mosaic_mode,
-                scratch_dir=scratch_dir,
-                geogrid_in=geogrid_in,
-                temp_files_list=None,
-            )
-
-        # Mosaic layover shadow mask
-        if layover_exist:
-            layover_gtiff_list = []
-            for input_rtc in input_list:
-                input_prefix = self.extract_file_name(input_rtc)
-                layover_gtiff = f"{scratch_dir}/{input_prefix}_layover.tif"
-                layover_gtiff_list = np.append(layover_gtiff_list, layover_gtiff)
-
-            layover_mosaic_gtiff = f"{scratch_dir}/{mosaic_prefix}_layover.tif"
-
-            mosaic_single_output_file(
-                layover_gtiff_list,
-                nlooks_list,
-                layover_mosaic_gtiff,
                 mosaic_mode,
                 scratch_dir=scratch_dir,
                 geogrid_in=geogrid_in,
@@ -1567,25 +1501,6 @@ class RTCReader(DataReader):
         data_path = []
         for dname in data_name:
             data_path = np.append(data_path, f"{group}{dname * 2}")
-
-        return data_path
-
-    def generate_nisar_layover_name(self, layover_name: str):
-        """Generate layOverShadowMask dataset path
-
-        Parameters
-        ----------
-        layover_name: str
-            Name of layover and shadow Mask layer in the input HDF5 file
-
-        Returns
-        -------
-        data_path: str
-            RTC dataset path within the HDF5 input file
-        """
-        group = "/science/LSAR/GCOV/grids/frequencyA/"
-
-        data_path = f"{group}{layover_name}"
 
         return data_path
 
