@@ -29,49 +29,6 @@ np2gdal_conversion = {
 copol = ["HH", "VV"]
 
 
-def extract_nisar_polarization(input_list):
-    """Extract input RTC dataset polarizations
-
-    Parameters
-    ----------
-    input_list: list
-        The HDF5 file paths of input RTCs to be mosaicked.
-
-    Returns
-    -------
-    polarizations: list of str
-        All dataset polarizations listed in the input HDF5 file
-    """
-
-    pol_list_path = "/science/LSAR/GCOV/grids/frequencyA/listOfPolarizations"
-    polarizations = []
-    pols_rtc = []
-    for input_idx, input_rtc in enumerate(input_list):
-        # Check if the file exists
-        if not os.path.exists(input_rtc):
-            raise FileNotFoundError(f"The file '{input_rtc}' does not exist.")
-        with h5py.File(input_rtc, "r") as src_h5:
-            pols = np.sort(src_h5[pol_list_path][()])
-            # pols = [pol for pol in pols if pol.decode('utf-8') in copol]
-            # pols = [pol.decode('utf-8') for pol in pols]
-            filtered_pols = [pol.decode("utf-8") for pol in pols]
-            # polarizations.append(pols)
-            polarizations.extend(filtered_pols)
-
-            # if len(polarizations) == 0:
-            #     polarizations = pols.copy()
-            # elif not np.all(polarizations == pols):
-            #     raise ValueError(
-            #         "Polarizations of multiple RTC files "
-            #         "are not consistent.")
-    # print(polarizations)
-
-    # for pol_idx, pol in enumerate(polarizations):
-    #     pols_rtc = np.append(pols_rtc, pol.decode('utf-8'))
-    pols_rtc = set(list(polarizations))
-    return pols_rtc
-
-
 def read_metadata_hdf5(input_rtc):
     """Read NISAR Level-2 GCOV metadata
 
@@ -113,20 +70,16 @@ def read_metadata_hdf5(input_rtc):
         zero_dopp_start = src_h5[dswx_meta_mapping["RTC_SENSING_START_TIME"]][
             ()
         ].decode()
-        zero_dopp_end = src_h5[dswx_meta_mapping["RTC_SENSING_END_TIME"]][
-            ()
-        ].decode()
+        zero_dopp_end = src_h5[dswx_meta_mapping["RTC_SENSING_END_TIME"]][()].decode()
         frame_number = src_h5[dswx_meta_mapping["RTC_FRAME_NUMBER"]][()]
         track_number = src_h5[dswx_meta_mapping["RTC_TRACK_NUMBER"]][()]
-        abs_orbit_number = src_h5[
-            dswx_meta_mapping["RTC_ABSOLUTE_ORBIT_NUMBER"]
-        ][()]
+        abs_orbit_number = src_h5[dswx_meta_mapping["RTC_ABSOLUTE_ORBIT_NUMBER"]][()]
         rtc_pols = src_h5[dswx_meta_mapping["RTC_POL"]][()]
         rtc_decoded_pol = [pol.decode("utf-8") for pol in rtc_pols]
         try:
-            input_slc_granules = src_h5[
-                dswx_meta_mapping["RTC_INPUT_L1_SLC_GRANULES"]
-            ][(0)].decode()
+            input_slc_granules = src_h5[dswx_meta_mapping["RTC_INPUT_L1_SLC_GRANULES"]][
+                (0)
+            ].decode()
         except:
             print("RTC_INPUT_L1_SLC_GRANULES is not available")
     dswx_metadata_dict = {
@@ -155,45 +108,9 @@ def get_lonlat(xcoord, ycoord, epsg):
 
     Point = ogr.Geometry(ogr.wkbPoint)
     Point.AddPoint(xcoord, ycoord)  # use your coordinates here
-    Point.AssignSpatialReference(
-        InSR
-    )  # tell the point what coordinates it's in
+    Point.AssignSpatialReference(InSR)  # tell the point what coordinates it's in
     Point.TransformTo(OutSR)  # project it to the out spatial reference
     return Point.GetX(), Point.GetY()
-
-
-def get_meta_from_tif(tif_file_name):
-    """Read metadata from geotiff
-
-    Parameters
-    ----------
-    input_tif_str: str
-        geotiff file path to read the band
-
-    Returns
-    -------
-    meta_dict: dict
-        dictionary containing geotransform, projection, image size,
-        utmzone, and epsg code.
-    """
-    if type(tif_file_name) is list:
-        tif_name = tif_file_name[0]
-    else:
-        tif_name = tif_file_name
-    tif_gdal = gdal.Open(tif_name)
-    meta_dict = {}
-    meta_dict["band_number"] = tif_gdal.RasterCount
-    meta_dict["geotransform"] = tif_gdal.GetGeoTransform()
-    meta_dict["projection"] = tif_gdal.GetProjection()
-    meta_dict["length"] = tif_gdal.RasterYSize
-    meta_dict["width"] = tif_gdal.RasterXSize
-    proj = osr.SpatialReference(wkt=meta_dict["projection"])
-    meta_dict["utmzone"] = proj.GetUTMZone()
-    output_epsg = proj.GetAttrValue("AUTHORITY", 1)
-    meta_dict["epsg"] = output_epsg
-    tif_gdal = None
-
-    return meta_dict
 
 
 def block_param_generator(lines_per_block, data_shape, pad_shape):
@@ -231,9 +148,7 @@ def block_param_generator(lines_per_block, data_shape, pad_shape):
         middle_block = not first_block and not last_block
 
         # Determine block size; Last block uses leftover lines
-        block_length = (
-            data_length - start_line if last_block else lines_per_block
-        )
+        block_length = data_length - start_line if last_block else lines_per_block
         # Determine padding along length. Full padding for middle blocks
         # Half padding for start and end blocks
         read_length_pad = pad_length if middle_block else half_pad_length
@@ -248,9 +163,7 @@ def block_param_generator(lines_per_block, data_shape, pad_shape):
         # If applicable, save negative start line as deficit
         # to account for later
         read_start_line, start_line_deficit = (
-            (0, read_start_line)
-            if read_start_line < 0
-            else (read_start_line, 0)
+            (0, read_start_line) if read_start_line < 0 else (read_start_line, 0)
         )
 
         # Initial guess at number lines to read; accounting
@@ -521,9 +434,7 @@ def _save_as_cog(
     elif ovr_resamp_algorithm is None:
         ovr_resamp_algorithm = "CUBICSPLINE"
 
-    gdal_ds.BuildOverviews(
-        ovr_resamp_algorithm, overviews_list, gdal.TermProgress_nocb
-    )
+    gdal_ds.BuildOverviews(ovr_resamp_algorithm, overviews_list, gdal.TermProgress_nocb)
 
     del gdal_ds  # close the dataset (Python object and pointers)
     external_overview_file = filename + ".ovr"

@@ -8,8 +8,6 @@ import pandas as pd
 import xarray as xr
 import filter_SAR, generate_log, reader_ni, util
 from dist_runconfig import RunConfig, _get_parser
-from osgeo import gdal
-from rasterio.windows import Window
 
 logger = logging.getLogger("sar2-d2")
 
@@ -48,11 +46,6 @@ def process_row(row, polarizations, filter_option, block_param):
         polarization_stack, dim=pd.Index(actual_pol, name="polarization")
     )
     return da_polarized
-
-
-def run_bootstrap(args):
-    """Wrapper to call bootstrap_trial with arguments."""
-    return bootstrap_trial(*args)
 
 
 def bootstrap_trial(args):
@@ -128,7 +121,6 @@ def dist_workflow(cfg):
     filter_option = {"lambda_value": proc_param.filter_lambda}
     seed_for_random = proc_param.seed_for_random
 
-    polarizations = util.extract_nisar_polarization(input_gcov_list)
     date_str_list = []
     data_stack = []
 
@@ -138,9 +130,6 @@ def dist_workflow(cfg):
 
         rtc_metadata = util.read_metadata_hdf5(input_h5)
         rtc_metadata["rtc_path"] = input_h5
-        # tags = src.tags(0)
-        # date_str = tags['ZERO_DOPPLER_START_TIME']
-        track_number = rtc_metadata["TRACK_NUMBER"]
         date_str_list.append(rtc_metadata["ZERO_DOPPLER_START_TIME"])
         data_stack.append(rtc_metadata)
 
@@ -232,7 +221,7 @@ def dist_workflow(cfg):
                 )
                 if os.path.isfile(output_filename):
                     data_stack_df.at[t, "geotiff_cross"] = output_filename
-    image_meta = util.get_meta_from_tif(data_stack_df.iloc[0]["geotiff_co"])
+    image_meta = reader_ni.get_meta_from_tif(data_stack_df.iloc[0]["geotiff_co"])
 
     pad_shape = (0, 0)
     block_params = util.block_param_generator(
@@ -241,11 +230,10 @@ def dist_workflow(cfg):
         pad_shape=pad_shape,
     )
 
+    polarizations = reader.extract_nisar_polarization(input_gcov_list)
+
     for block_ind, block_param in enumerate(block_params):
         print(f"Processing block {block_ind}")
-        row_start = block_param.read_start_line
-        row_num = block_param.read_start_line + block_param.read_length
-        pixel_window = Window(row_start, 0, row_num, block_param.data_width)
         da_stack = []
         # Apply despeckle filter for images
         # Use ThreadPoolExecutor for parallel processing of rows
@@ -544,11 +532,6 @@ def dist_workflow(cfg):
                         .mean(dim=("x", "y"), skipna=True)
                         .item()
                     )
-                    mean_cumsum_result_date = (
-                        cumsum_result_diff_single_date.sel(polarization=pol_single)
-                        .mean(dim=("x", "y"), skipna=True)
-                        .item()
-                    )
                     # Check if S_date has any non-zero data
                     if np.isnan(mean_X_date):
                         continue
@@ -563,11 +546,6 @@ def dist_workflow(cfg):
                             cumsum_result.max(dim="time") > 0
                         )
                     )  # Only care for positive values in Smax
-                    mean_cumsum_result_date = (
-                        cumsum_result_diff_single_date.sel(polarization=pol_single)
-                        .mean(dim=("x", "y"), skipna=True)
-                        .item()
-                    )
 
                     dmask_single = cumsum_result_diff_single_date > dthres
                     cumsum_result_diff_single_date = (
@@ -575,11 +553,6 @@ def dist_workflow(cfg):
                     )
                     change_path_name = (
                         f"{output_dir}/cumsum_single_{date_str}_{pol_single}.tif"
-                    )
-                    mean_cumsum_result_date = (
-                        cumsum_result_diff_single_date.sel(polarization=pol_single)
-                        .mean(dim=("x", "y"), skipna=True)
-                        .item()
                     )
 
                     util.write_raster_block(
@@ -615,17 +588,8 @@ def dist_workflow(cfg):
             cumsum_result_Diff_array_masked = cumsum_result_Diff_array_masked.where(
                 cumsum_result_Diff_array_masked > 0
             )
-            cumsum_result_Diff_array_masked_filled = (
-                cumsum_result_Diff_array_masked.fillna(-np.inf)
-            )
-
-            # Determine where there is at least one non-NaN value along the time dimension
-            valid_data_mask = cumsum_result_Diff_array_masked.notnull().any(dim="time")
 
             # Initialize arrays to hold max values and year information
-            max_change_data = cumsum_result_Diff_array_masked.max(dim="time").where(
-                valid_data_mask, drop=True
-            )  # Get max value along time where valid data exists
             max_time_index = cumsum_result_Diff_array_masked.fillna(-np.inf).argmax(
                 dim="time"
             )  # Find max time index, ignoring NaNs

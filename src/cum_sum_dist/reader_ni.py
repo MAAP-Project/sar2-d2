@@ -1,6 +1,4 @@
-import logging
 import math
-import mimetypes
 import os
 import tempfile
 import warnings
@@ -14,7 +12,7 @@ from typing import Any
 import h5py
 import numpy as np
 import rasterio
-from osgeo import gdal, ogr, osr
+from osgeo import gdal, osr
 from osgeo.gdal import Dataset
 from pyproj import Transformer
 from rasterio.transform import Affine
@@ -860,38 +858,6 @@ class DSWXGeogrid:
     width: int = np.nan
     epsg: int = np.nan
 
-    def get_geogrid_from_geotiff(self, geotiff_path):
-        """
-        Extract geographical grid parameters from a GeoTIFF file
-        and update the dataclass attributes.
-
-        Parameters
-        ----------
-        geotiff_path : str
-            The file path to the GeoTIFF file from which the grid
-            parameters are to be extracted.
-        """
-        tif_gdal = gdal.Open(geotiff_path)
-        geotransform = tif_gdal.GetGeoTransform()
-        self.start_x = geotransform[0]
-        self.spacing_x = geotransform[1]
-
-        self.start_y = geotransform[3]
-        self.spacing_y = geotransform[5]
-
-        self.length = tif_gdal.RasterYSize
-        self.width = tif_gdal.RasterXSize
-
-        self.end_x = self.start_x + self.width * self.spacing_x
-        self.end_y = self.start_y + self.length * self.spacing_y
-
-        projection = tif_gdal.GetProjection()
-        proj = osr.SpatialReference(wkt=projection)
-        output_epsg = proj.GetAttrValue("AUTHORITY", 1)
-        self.epsg = int(output_epsg)
-        tif_gdal = None
-        del tif_gdal
-
     @classmethod
     def from_geotiff(cls, geotiff_path):
         """
@@ -1054,7 +1020,7 @@ class RTCReader(DataReader):
         layover_path = str(self.generate_nisar_layover_name(layover_mask_name))
 
         # Collect EPSG
-        epsg_array, epsg_same_flag = self.get_nisar_epsg(input_list)
+        epsg_array = self.get_nisar_epsg(input_list)
 
         # Write all RTC HDF5 inputs to intermeidate Geotiff first and re-use
         # existing functions to reproject data and create mosaicked output
@@ -1072,10 +1038,9 @@ class RTCReader(DataReader):
             # Apply multi-look technique
             if resamp_method == "multilook":
                 if len(input_gtiff_list) > 0:
-                    for idx, input_geotiff in enumerate(input_gtiff_list):
+                    for input_geotiff in input_gtiff_list:
                         self.multi_look_average(
                             input_geotiff,
-                            scratch_dir,
                             resamp_out_res,
                             geogrid_in,
                         )
@@ -1083,20 +1048,18 @@ class RTCReader(DataReader):
                 # Apply resampling using GDAL.Warp() based on
                 # resampling methods
                 if len(input_gtiff_list) > 0:
-                    for idx, input_geotiff in enumerate(input_gtiff_list):
+                    for input_geotiff in input_gtiff_list:
                         self.resample_rtc(
                             input_geotiff,
-                            scratch_dir,
                             resamp_out_res,
                             geogrid_in,
                             resamp_method,
                         )
             if len(layover_gtiff_list) > 0:
                 layover_exist = True
-                for idx, layover_geotiff in enumerate(layover_gtiff_list):
+                for layover_geotiff in layover_gtiff_list:
                     self.resample_rtc(
                         layover_geotiff,
-                        scratch_dir,
                         resamp_out_res,
                         geogrid_in,
                         "nearest",
@@ -1166,7 +1129,7 @@ class RTCReader(DataReader):
         layover_gtiff_list = []
 
         # Create intermediate input Geotiffs
-        for input_idx, input_rtc in enumerate(input_list):
+        for input_rtc in input_list:
             # Extract file names
             output_prefix = self.extract_file_name(input_rtc)
 
@@ -1177,15 +1140,13 @@ class RTCReader(DataReader):
             dswx_metadata_dict = self.read_metadata_hdf5(input_rtc)
 
             # Create Intermediate Geotiffs for each input GCOV file
-            for path_idx, dataset_path in enumerate(data_path):
+            for dataset_path in data_path:
                 data_name = Path(dataset_path).name[:2]
                 dataset = f"HDF5:{input_rtc}:/{dataset_path}"
                 output_gtiff = f"{scratch_dir}/{output_prefix}_{data_name}.tif"
                 output_gtiff_list = np.append(output_gtiff_list, output_gtiff)
 
                 h5_ds = gdal.Open(dataset, gdal.GA_ReadOnly)
-                if h5_ds is None:
-                    1 / 0
                 num_cols = h5_ds.RasterXSize
                 num_rows = h5_ds.RasterYSize
 
@@ -1211,7 +1172,7 @@ class RTCReader(DataReader):
             input_prefix = self.extract_file_name(input_rtc)
             # Check if the RTC has the same EPSG with the reference.
             if epsg_array[input_idx] != most_freq_epsg:
-                for idx, dataset_path in enumerate(data_path):
+                for dataset_path in data_path:
                     data_name = Path(dataset_path).name[:2]
                     input_gtiff = f"{scratch_dir}/{input_prefix}_{data_name}.tif"
                     temp_gtiff = f"{scratch_dir}/{input_prefix}_temp_{data_name}.tif"
@@ -1230,7 +1191,7 @@ class RTCReader(DataReader):
                     # Replace input file with output temp file
                     os.replace(temp_gtiff, input_gtiff)
             else:
-                for idx, dataset_path in enumerate(data_path):
+                for dataset_path in data_path:
                     data_name = Path(dataset_path).name[:2]
                     output_gtiff = f"{scratch_dir}/{input_prefix}_{data_name}.tif"
 
@@ -1238,7 +1199,7 @@ class RTCReader(DataReader):
                     geogrid_in.update_geogrid(output_gtiff)
 
         # Generate Layover Shadow Mask Intermediate Geotiffs
-        for input_idx, input_rtc in enumerate(input_list):
+        for input_rtc in input_list:
             layover_data = f"HDF5:{input_rtc}:/{layover_path}"
             h5_layover = gdal.Open(layover_data, gdal.GA_ReadOnly)
 
@@ -1250,48 +1211,6 @@ class RTCReader(DataReader):
                     RuntimeWarning,
                 )
                 break
-
-                output_prefix = self.extract_file_name(input_rtc)
-                output_layover_gtiff = f"{scratch_dir}/{output_prefix}_layover.tif"
-                layover_gtiff_list = np.append(layover_gtiff_list, output_layover_gtiff)
-
-                num_cols = h5_layover.RasterXSize
-                col_blk_size = self.col_blk_size
-
-                self.read_write_rtc(
-                    h5_layover,
-                    output_layover_gtiff,
-                    num_rows,
-                    num_cols,
-                    row_blk_size,
-                    col_blk_size,
-                    designated_value,
-                    geotransform,
-                    crs,
-                    dswx_metadata_dict,
-                )
-
-                # Change EPSG of layOverMask if necessary
-                if epsg_array[input_idx] != most_freq_epsg:
-                    input_prefix = self.extract_file_name(input_rtc)
-                    input_layover_gtiff = f"{scratch_dir}/{input_prefix}_layover.tif"
-                    temp_layover_gtiff = (
-                        f"{scratch_dir}/{input_prefix}_temp_layover.tif"
-                    )
-
-                    change_epsg_tif(
-                        input_tif=input_layover_gtiff,
-                        output_tif=temp_layover_gtiff,
-                        epsg_output=most_freq_epsg,
-                        output_nodata=255,
-                    )
-
-                    geogrid_in.update_geogrid(output_layover_gtiff)
-
-                    # Replace input file with output temp file
-                    os.replace(temp_layover_gtiff, input_layover_gtiff)
-                else:
-                    geogrid_in.update_geogrid(output_layover_gtiff)
 
         return geogrid_in, output_gtiff_list, layover_gtiff_list
 
@@ -1330,10 +1249,10 @@ class RTCReader(DataReader):
             Boolean which indicates if a layoverShadowMask layer
             exists in input RTC
         """
-        for idx, dataset_path in enumerate(data_path):
+        for dataset_path in data_path:
             data_name = Path(dataset_path).name[:2]
             input_gtiff_list = []
-            for input_idx, input_rtc in enumerate(input_list):
+            for input_rtc in input_list:
                 input_prefix = self.extract_file_name(input_rtc)
                 input_gtiff = f"{scratch_dir}/{input_prefix}_{data_name}.tif"
                 input_gtiff_list = np.append(input_gtiff_list, input_gtiff)
@@ -1353,7 +1272,7 @@ class RTCReader(DataReader):
         # Mosaic layover shadow mask
         if layover_exist:
             layover_gtiff_list = []
-            for input_idx, input_rtc in enumerate(input_list):
+            for input_rtc in input_list:
                 input_prefix = self.extract_file_name(input_rtc)
                 layover_gtiff = f"{scratch_dir}/{input_prefix}_layover.tif"
                 layover_gtiff_list = np.append(layover_gtiff_list, layover_gtiff)
@@ -1373,7 +1292,6 @@ class RTCReader(DataReader):
     def resample_rtc(
         self,
         input_geotiff: str,
-        scratch_dir: str,
         output_res: float,
         geogrid_in: DSWXGeogrid,
         resamp_method: str = "nearest",
@@ -1385,8 +1303,6 @@ class RTCReader(DataReader):
         ----------
         input_geotiff: str
             Input geotiff path to be resampled.
-        scratch_dir: str
-            Directory which stores the temporary files
         output_res: float
             User define output resolution for resampled Geotiff
         geogrid_in: DSWXGeogrid object
@@ -1405,7 +1321,6 @@ class RTCReader(DataReader):
         output_geotiff = f"{full_path.parent}/{full_path.stem}_resamp.tif"
 
         ds_input = gdal.Open(input_geotiff)
-        geotransform = ds_input.GetGeoTransform()
 
         # Set GDAL Warp options
         # Resampling method
@@ -1427,7 +1342,6 @@ class RTCReader(DataReader):
     def multi_look_average(
         self,
         input_geotiff: str,
-        scratch_dir: str,
         output_res: float,
         geogrid_in: DSWXGeogrid,
     ):
@@ -1438,8 +1352,6 @@ class RTCReader(DataReader):
         ----------
         input_geotiff: str
             Input geotiff path to be resampled.
-        scratch_dir: str
-            Directory which stores the temporary files
         output_res: float
             User define output resolution for multi-looked Geotiff
         geogrid_in: DSWXGeogrid object
@@ -1488,8 +1400,6 @@ class RTCReader(DataReader):
 
             ds_upsamp = gdal.Warp("", ds_input, options=warp_options)
             data_upsamp = ds_upsamp.GetRasterBand(1).ReadAsArray()
-            geotransform_upsamp = ds_upsamp.GetGeoTransform()
-            projection_upsamp = ds_upsamp.GetProjection()
 
             # Aggregate pixel values in a image to lower resolution to achieve
             # multi-looking effect
@@ -1503,7 +1413,6 @@ class RTCReader(DataReader):
             self.write_array_to_geotiff(
                 ds_upsamp,
                 multi_look_output,
-                upsamp_bounds,
                 output_res,
                 output_geotiff,
             )
@@ -1519,7 +1428,6 @@ class RTCReader(DataReader):
             self.write_array_to_geotiff(
                 ds_input,
                 multi_look_output,
-                upsamp_bounds,
                 output_res,
                 output_geotiff,
             )
@@ -1536,7 +1444,6 @@ class RTCReader(DataReader):
         self,
         ds_input,
         output_data,
-        output_bounds,
         output_res,
         output_geotiff,
     ):
@@ -1548,8 +1455,6 @@ class RTCReader(DataReader):
             input dataset opened by GDAL
         output_data: numpy.ndarray
             output_data to be written into output geotiff
-        output_bounds: list
-            The bounding box coordinates where the output will be clipped.
         output_res: float
             User define output resolution for resampled Geotiff
         downsamp_ratio: int
@@ -1628,26 +1533,18 @@ class RTCReader(DataReader):
         """
 
         pol_list_path = "/science/LSAR/GCOV/grids/frequencyA/listOfPolarizations"
-        polarizations = []
-        pols_rtc = []
-        for input_idx, input_rtc in enumerate(input_list):
-            print(input_rtc)
+
+        polarizations = set()
+        for input_rtc in input_list:
             # Check if the file exists
             if not os.path.exists(input_rtc):
                 raise FileNotFoundError(f"The file '{input_rtc}' does not exist.")
             with h5py.File(input_rtc, "r") as src_h5:
-                pols = np.sort(src_h5[pol_list_path][()])
-                if len(polarizations) == 0:
-                    polarizations = pols.copy()
-                elif not np.all(polarizations == pols):
-                    raise ValueError(
-                        "Polarizations of multiple RTC files are not consistent."
-                    )
+                pols = src_h5[pol_list_path][()]
+                pols = {p.decode("utf-8") for p in pols}
+                polarizations |= pols
 
-        for pol_idx, pol in enumerate(polarizations):
-            pols_rtc = np.append(pols_rtc, pol.decode("utf-8"))
-
-        return pols_rtc
+        return polarizations
 
     def generate_nisar_dataset_name(self, data_name: str | list[str]):
         """Generate dataset paths
@@ -1668,7 +1565,7 @@ class RTCReader(DataReader):
 
         group = "/science/LSAR/GCOV/grids/frequencyA/"
         data_path = []
-        for name_idx, dname in enumerate(data_name):
+        for dname in data_name:
             data_path = np.append(data_path, f"{group}{dname * 2}")
 
         return data_path
@@ -1704,9 +1601,6 @@ class RTCReader(DataReader):
         -------
         epsg_array: array of int
             EPSG of each of the RTC input HDF5
-        epsg_same_flag: bool
-            A flag which indicates whether all input EPSG are the same
-            if True, all input EPSG are the same and vice versa.
         """
         proj = "/science/LSAR/GCOV/grids/frequencyA/projection"
 
@@ -1715,12 +1609,7 @@ class RTCReader(DataReader):
             with h5py.File(input_rtc, "r") as src_h5:
                 epsg_array[input_idx] = src_h5[proj][()]
 
-        if (epsg_array == epsg_array[0]).all():
-            epsg_same_flag = True
-        else:
-            epsg_same_flag = False
-
-        return epsg_array, epsg_same_flag
+        return epsg_array
 
     def read_write_rtc(
         self,
@@ -1778,9 +1667,9 @@ class RTCReader(DataReader):
             transform=geotransform,
             compress="DEFLATE",
         ) as dst:
-            for idx_y, slice_row in enumerate(slice_gen(num_rows, row_blk_size)):
+            for slice_row in slice_gen(num_rows, row_blk_size):
                 row_slice_size = slice_row.stop - slice_row.start
-                for idx_x, slice_col in enumerate(slice_gen(num_cols, col_blk_size)):
+                for slice_col in slice_gen(num_cols, col_blk_size):
                     col_slice_size = slice_col.stop - slice_col.start
 
                     ds_blk = h5_ds.ReadAsArray(

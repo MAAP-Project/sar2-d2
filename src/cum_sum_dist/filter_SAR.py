@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
-from scipy import ndimage, signal
-from scipy.interpolate import griddata
+from scipy import signal
 from skimage.restoration import denoise_tv_bregman, denoise_tv_chambolle
 
 K_DEFAULT = 1.0
@@ -94,17 +93,14 @@ def weightingarr(im, winsize, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT):
     w_t_arr = np.zeros(im.shape)
     w_t_arr[ci <= cu] = 1
     w_t_arr[(ci > cu) & (ci < cmax)] = np.exp(
-        (-k * (ci[(ci > cu) & (ci < cmax)] - cu))
-        / (cmax - ci[(ci > cu) & (ci < cmax)])
+        (-k * (ci[(ci > cu) & (ci < cmax)] - cu)) / (cmax - ci[(ci > cu) & (ci < cmax)])
     )
     w_t_arr[ci >= cmax] = 0
 
     return w_t_arr, window_mean, window_std
 
 
-def lee_enhanced_filter(
-    img, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT, **kwargs
-):
+def lee_enhanced_filter(img, k=K_DEFAULT, cu=CU_DEFAULT, cmax=CMAX_DEFAULT, **kwargs):
     """
     Enhanced Lee filter for SAR image
 
@@ -112,6 +108,8 @@ def lee_enhanced_filter(
     image despeckling using an enhanced Lee filter and median filter.
     In 2013 6th International congress on image and signal processing
     (CISP) (Vol. 1, pp. 224-228). IEEE. 10.1109/CISP.2013.6743991
+
+    # TODO (Sam): Is this function necessary? It is not used elsewhere.
 
     Parameters
     ----------
@@ -145,6 +143,8 @@ def fill_nan_value(data):
 def anisotropic_diffusion(img, **kwargs):
     """
     Anisotropic Diffusion
+
+    # TODO (Sam): Is this function necessary? It is not used elsewhere.
 
     Parameters
     ----------
@@ -195,6 +195,8 @@ def guided_filter(img, **kwargs):
      guidedFilter implementation. NaN values are preserved as they are in the
      input image. The filter is applied to the logarithmic scale (10 * log10)
      of the image after handling NaNs.
+
+    # TODO (Sam): Is this function necessary? It is not used elsewhere.
 
      Parameters:
      ----------
